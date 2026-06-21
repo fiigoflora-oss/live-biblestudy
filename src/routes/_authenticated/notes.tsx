@@ -7,15 +7,15 @@ import {
   useAnnotations,
   type VerseAnnotation,
 } from "@/lib/annotations";
-import { Bookmark, NotebookPen, BookOpen } from "lucide-react";
+import { NotebookPen, BookOpen, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/notes")({
+export const Route = createFileRoute("/_authenticated/notes")({
   head: () => ({
     meta: [
       { title: "My Notes — Lectio" },
-      { name: "description", content: "Your highlights, notes, and bookmarks organized by book and chapter." },
+      { name: "description", content: "Your highlights and notes organized by book and chapter." },
     ],
     links: [
       {
@@ -32,9 +32,9 @@ interface Grouped {
   chapters: { chapter: number; items: VerseAnnotation[] }[];
 }
 
-function groupAnnotations(data: Record<string, VerseAnnotation>): Grouped[] {
+function groupAnnotations(items: VerseAnnotation[]): Grouped[] {
   const byBook = new Map<string, Map<number, VerseAnnotation[]>>();
-  for (const ann of Object.values(data)) {
+  for (const ann of items) {
     if (!byBook.has(ann.book)) byBook.set(ann.book, new Map());
     const chMap = byBook.get(ann.book)!;
     if (!chMap.has(ann.chapter)) chMap.set(ann.chapter, []);
@@ -52,18 +52,14 @@ function groupAnnotations(data: Record<string, VerseAnnotation>): Grouped[] {
 }
 
 function NotesPage() {
-  const { data, remove } = useAnnotations();
-  const grouped = useMemo(() => groupAnnotations(data), [data]);
+  const { all, isLoading, remove } = useAnnotations();
+  const grouped = useMemo(() => groupAnnotations(all), [all]);
 
-  const counts = useMemo(() => {
-    const vals = Object.values(data);
-    return {
-      total: vals.length,
-      highlights: vals.filter((v) => v.highlight).length,
-      notes: vals.filter((v) => v.note).length,
-      bookmarks: vals.filter((v) => v.bookmarked).length,
-    };
-  }, [data]);
+  const counts = useMemo(() => ({
+    total: all.length,
+    highlights: all.filter((v) => v.highlight).length,
+    notes: all.filter((v) => v.note).length,
+  }), [all]);
 
   return (
     <SidebarProvider>
@@ -77,21 +73,24 @@ function NotesPage() {
                 My Notes
               </span>
               <span className="text-xs text-muted-foreground">
-                Highlights, notes, and bookmarks
+                Highlights and notes
               </span>
             </div>
           </header>
 
           <main className="flex-1 px-4 py-8 sm:px-8 sm:py-12">
             <div className="mx-auto w-full max-w-4xl">
-              <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Stat label="Total" value={counts.total} />
+              <div className="mb-8 grid grid-cols-3 gap-3">
+                <Stat label="Saved" value={counts.total} />
                 <Stat label="Highlights" value={counts.highlights} />
                 <Stat label="Notes" value={counts.notes} />
-                <Stat label="Bookmarks" value={counts.bookmarks} />
               </div>
 
-              {grouped.length === 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center py-16 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : grouped.length === 0 ? (
                 <EmptyState />
               ) : (
                 <div className="space-y-8">
@@ -112,7 +111,7 @@ function NotesPage() {
                             <ul className="space-y-3">
                               {items.map((ann) => (
                                 <li
-                                  key={ann.verse}
+                                  key={`${ann.book}-${ann.chapter}-${ann.verse}`}
                                   className="group rounded-lg border border-border/60 bg-background/60 p-4 transition-colors hover:border-border"
                                 >
                                   <div className="mb-2 flex items-center justify-between gap-2">
@@ -120,9 +119,6 @@ function NotesPage() {
                                       {ann.book} {ann.chapter}:{ann.verse}
                                     </span>
                                     <div className="flex items-center gap-1.5">
-                                      {ann.bookmarked && (
-                                        <Bookmark className="h-3.5 w-3.5 text-primary/70" />
-                                      )}
                                       {ann.note && (
                                         <NotebookPen className="h-3.5 w-3.5 text-primary/70" />
                                       )}
@@ -188,7 +184,7 @@ function EmptyState() {
         No notes yet
       </h2>
       <p className="mt-2 max-w-sm font-sans text-sm text-muted-foreground">
-        Open the Bible Reader, tap a verse, then highlight it, leave a note, or bookmark it. Your reflections will gather here.
+        Open the Bible Reader, tap a verse, then highlight it or leave a note. Your reflections will gather here.
       </p>
       <Button asChild className="mt-5">
         <Link to="/">Open Bible Reader</Link>

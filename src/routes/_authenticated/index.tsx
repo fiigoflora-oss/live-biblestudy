@@ -3,13 +3,11 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BibleReader } from "@/components/bible-reader";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Lectio — Bible Study Dashboard" },
-      { name: "description", content: "A peaceful, modern Bible study dashboard with reader, notes, and study groups." },
-      { property: "og:title", content: "Lectio — Bible Study Dashboard" },
-      { property: "og:description", content: "A peaceful, modern Bible study dashboard with reader, notes, and study groups." },
+      { name: "description", content: "Read, highlight, and reflect on Scripture." },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },

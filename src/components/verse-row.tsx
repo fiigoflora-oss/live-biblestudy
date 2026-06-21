@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bookmark, BookmarkCheck, NotebookPen, Trash2 } from "lucide-react";
+import { NotebookPen, Trash2 } from "lucide-react";
 import {
   highlightClasses,
   useAnnotations,
@@ -24,24 +24,18 @@ const colorSwatch: Record<HighlightColor, string> = {
 };
 
 export function VerseRow({ book, chapter, verse, text }: Props) {
-  const { get, update, remove } = useAnnotations();
+  const { get, setHighlight, setNote, remove } = useAnnotations();
   const ann = get(book, chapter, verse);
   const [open, setOpen] = useState(false);
   const [draftNote, setDraftNote] = useState(ann?.note ?? "");
   const [showNoteEditor, setShowNoteEditor] = useState(false);
 
-  const setHighlight = (color: HighlightColor) => {
-    update(book, chapter, verse, text, {
-      highlight: ann?.highlight === color ? undefined : color,
-    });
-  };
-
-  const toggleBookmark = () => {
-    update(book, chapter, verse, text, { bookmarked: !ann?.bookmarked });
+  const toggleHighlight = (color: HighlightColor) => {
+    setHighlight(book, chapter, verse, text, ann?.highlight === color ? undefined : color);
   };
 
   const saveNote = () => {
-    update(book, chapter, verse, text, { note: draftNote.trim() || undefined });
+    setNote(book, chapter, verse, text, draftNote.trim() || undefined);
     setShowNoteEditor(false);
   };
 
@@ -70,9 +64,6 @@ export function VerseRow({ book, chapter, verse, text }: Props) {
           {ann?.note && (
             <NotebookPen className="ml-1.5 inline h-3.5 w-3.5 align-baseline text-primary/70" />
           )}
-          {ann?.bookmarked && (
-            <BookmarkCheck className="ml-1 inline h-3.5 w-3.5 align-baseline text-primary/70" />
-          )}
         </p>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-3" align="start">
@@ -80,7 +71,7 @@ export function VerseRow({ book, chapter, verse, text }: Props) {
           <span className="font-sans text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {book} {chapter}:{verse}
           </span>
-          {(ann?.highlight || ann?.note || ann?.bookmarked) && (
+          {(ann?.highlight || ann?.note) && (
             <button
               onClick={() => {
                 remove(book, chapter, verse);
@@ -102,7 +93,7 @@ export function VerseRow({ book, chapter, verse, text }: Props) {
             {(Object.keys(colorSwatch) as HighlightColor[]).map((c) => (
               <button
                 key={c}
-                onClick={() => setHighlight(c)}
+                onClick={() => toggleHighlight(c)}
                 className={cn(
                   "h-7 w-7 rounded-full border-2 transition-all",
                   colorSwatch[c],
@@ -133,25 +124,15 @@ export function VerseRow({ book, chapter, verse, text }: Props) {
             </div>
           </div>
         ) : (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={() => setShowNoteEditor(true)}
-            >
-              <NotebookPen className="mr-1.5 h-3.5 w-3.5" />
-              {ann?.note ? "Edit note" : "Add note"}
-            </Button>
-            <Button
-              variant={ann?.bookmarked ? "default" : "outline"}
-              size="sm"
-              onClick={toggleBookmark}
-              aria-label="Bookmark"
-            >
-              <Bookmark className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => setShowNoteEditor(true)}
+          >
+            <NotebookPen className="mr-1.5 h-3.5 w-3.5" />
+            {ann?.note ? "Edit note" : "Add note"}
+          </Button>
         )}
 
         {ann?.note && !showNoteEditor && (
