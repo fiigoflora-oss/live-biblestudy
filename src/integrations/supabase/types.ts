@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      group_memberships: {
+        Row: {
+          display_name: string | null
+          group_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          display_name?: string | null
+          group_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          display_name?: string | null
+          group_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_memberships_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_posts: {
+        Row: {
+          author_name: string
+          body: string
+          created_at: string
+          group_id: string
+          id: string
+          reading_day: number | null
+          user_id: string
+        }
+        Insert: {
+          author_name: string
+          body: string
+          created_at?: string
+          group_id: string
+          id?: string
+          reading_day?: number | null
+          user_id: string
+        }
+        Update: {
+          author_name?: string
+          body?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          reading_day?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_posts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       highlights: {
         Row: {
           book: string
@@ -89,12 +159,83 @@ export type Database = {
         }
         Relationships: []
       }
+      reading_plan_items: {
+        Row: {
+          book: string
+          chapter: number
+          created_at: string
+          day_number: number
+          group_id: string
+          id: string
+          scheduled_date: string | null
+          title: string
+        }
+        Insert: {
+          book: string
+          chapter: number
+          created_at?: string
+          day_number: number
+          group_id: string
+          id?: string
+          scheduled_date?: string | null
+          title: string
+        }
+        Update: {
+          book?: string
+          chapter?: number
+          created_at?: string
+          day_number?: number
+          group_id?: string
+          id?: string
+          scheduled_date?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_plan_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_groups: {
+        Row: {
+          book: string | null
+          created_at: string
+          description: string
+          id: string
+          is_public: boolean
+          name: string
+        }
+        Insert: {
+          book?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_public?: boolean
+          name: string
+        }
+        Update: {
+          book?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_public?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       highlight_color: "yellow" | "green" | "blue"
