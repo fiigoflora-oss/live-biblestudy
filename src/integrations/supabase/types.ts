@@ -14,7 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      highlights: {
+        Row: {
+          book: string
+          chapter: number
+          color: Database["public"]["Enums"]["highlight_color"]
+          created_at: string
+          id: string
+          user_id: string
+          verse: number
+          verse_reference: string
+          verse_text: string
+        }
+        Insert: {
+          book: string
+          chapter: number
+          color: Database["public"]["Enums"]["highlight_color"]
+          created_at?: string
+          id?: string
+          user_id: string
+          verse: number
+          verse_reference: string
+          verse_text: string
+        }
+        Update: {
+          book?: string
+          chapter?: number
+          color?: Database["public"]["Enums"]["highlight_color"]
+          created_at?: string
+          id?: string
+          user_id?: string
+          verse?: number
+          verse_reference?: string
+          verse_text?: string
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          book: string
+          chapter: number
+          created_at: string
+          id: string
+          note_text: string
+          updated_at: string
+          user_id: string
+          verse: number
+          verse_reference: string
+          verse_text: string
+        }
+        Insert: {
+          book: string
+          chapter: number
+          created_at?: string
+          id?: string
+          note_text: string
+          updated_at?: string
+          user_id: string
+          verse: number
+          verse_reference: string
+          verse_text: string
+        }
+        Update: {
+          book?: string
+          chapter?: number
+          created_at?: string
+          id?: string
+          note_text?: string
+          updated_at?: string
+          user_id?: string
+          verse?: number
+          verse_reference?: string
+          verse_text?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +97,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      highlight_color: "yellow" | "green" | "blue"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +224,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      highlight_color: ["yellow", "green", "blue"],
+    },
   },
 } as const
