@@ -59,11 +59,11 @@ export function useAnnotations() {
       const current = load();
       const k = keyOf(book, chapter, verse);
       const next: VerseAnnotation = {
+        ...current[k],
         book,
         chapter,
         verse,
         text,
-        ...current[k],
         ...patch,
         updatedAt: Date.now(),
       };
