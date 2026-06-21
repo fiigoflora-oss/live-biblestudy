@@ -1,0 +1,110 @@
+import { useMemo, useState } from "react";
+import { books, translations, getChapter } from "@/lib/bible-data";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+export function BibleReader() {
+  const [book, setBook] = useState("John");
+  const [chapter, setChapter] = useState(1);
+  const [translation, setTranslation] = useState("KJV");
+
+  const bookMeta = useMemo(() => books.find((b) => b.name === book)!, [book]);
+  const verses = useMemo(() => getChapter(book, chapter), [book, chapter]);
+
+  const onBookChange = (val: string) => {
+    setBook(val);
+    setChapter(1);
+  };
+
+  const prev = () => setChapter((c) => Math.max(1, c - 1));
+  const next = () => setChapter((c) => Math.min(bookMeta.chapters, c + 1));
+
+  return (
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Book
+            </label>
+            <Select value={book} onValueChange={onBookChange}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {books.map((b) => (
+                  <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Chapter
+            </label>
+            <Select value={String(chapter)} onValueChange={(v) => setChapter(Number(v))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent className="max-h-72">
+                {Array.from({ length: bookMeta.chapters }, (_, i) => i + 1).map((n) => (
+                  <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Translation
+            </label>
+            <Select value={translation} onValueChange={setTranslation}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {translations.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.id} — {t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      <article className="rounded-xl border border-border bg-card px-6 py-10 shadow-sm sm:px-12 sm:py-14">
+        <header className="mb-8 border-b border-border pb-6 text-center">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            {translation}
+          </p>
+          <h1 className="font-scripture mt-2 text-4xl font-semibold text-foreground sm:text-5xl">
+            {book} {chapter}
+          </h1>
+        </header>
+
+        <div className="font-scripture space-y-4 text-lg leading-relaxed text-foreground sm:text-[1.2rem] sm:leading-[1.9]">
+          {verses.map((v, i) => (
+            <p key={i} className="group">
+              <sup className="mr-1.5 font-sans text-xs font-semibold text-primary/70">
+                {i + 1}
+              </sup>
+              {v}
+            </p>
+          ))}
+        </div>
+
+        <footer className="mt-10 flex items-center justify-between border-t border-border pt-6">
+          <Button variant="ghost" onClick={prev} disabled={chapter === 1}>
+            <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+          </Button>
+          <span className="font-scripture text-sm italic text-muted-foreground">
+            Chapter {chapter} of {bookMeta.chapters}
+          </span>
+          <Button variant="ghost" onClick={next} disabled={chapter === bookMeta.chapters}>
+            Next <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </footer>
+      </article>
+    </div>
+  );
+}
