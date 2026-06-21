@@ -1,8 +1,11 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, LayoutDashboard, NotebookPen, Users, UserCircle } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { BookOpen, LayoutDashboard, NotebookPen, Users, UserCircle, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -11,6 +14,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -22,6 +27,20 @@ const items = [
 
 export function AppSidebar() {
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+  }, []);
+
+  const signOut = async () => {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -57,6 +76,24 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t border-sidebar-border">
+        <div className="flex flex-col gap-2 px-2 py-2">
+          {email && (
+            <div className="flex items-center gap-2 px-1">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">
+                {email[0]?.toUpperCase()}
+              </div>
+              <span className="truncate font-sans text-xs text-sidebar-foreground">
+                {email}
+              </span>
+            </div>
+          )}
+          <Button variant="ghost" size="sm" onClick={signOut} className="justify-start gap-2">
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </Button>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
