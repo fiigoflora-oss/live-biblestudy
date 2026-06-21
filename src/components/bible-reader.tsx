@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { VerseRow } from "@/components/verse-row";
 
 export function BibleReader() {
   const [book, setBook] = useState("John");
@@ -82,14 +83,15 @@ export function BibleReader() {
           </h1>
         </header>
 
-        <div className="font-scripture space-y-4 text-lg leading-relaxed text-foreground sm:text-[1.2rem] sm:leading-[1.9]">
+        <div className="font-scripture space-y-2 text-lg leading-relaxed text-foreground sm:text-[1.2rem] sm:leading-[1.9]">
           {verses.map((v, i) => (
-            <p key={i} className="group">
-              <sup className="mr-1.5 font-sans text-xs font-semibold text-primary/70">
-                {i + 1}
-              </sup>
-              {v}
-            </p>
+            <VerseRow
+              key={`${book}-${chapter}-${i}`}
+              book={book}
+              chapter={chapter}
+              verse={i + 1}
+              text={v}
+            />
           ))}
         </div>
 
