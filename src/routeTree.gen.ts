@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedReaderRouteImport } from './routes/_authenticated/reader'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
 import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated/groups'
 import { Route as AuthenticatedGroupsGroupIdRouteImport } from './routes/_authenticated/groups/$groupId'
@@ -28,6 +29,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReaderRoute = AuthenticatedReaderRouteImport.update({
+  id: '/reader',
+  path: '/reader',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
@@ -52,12 +58,14 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/groups': typeof AuthenticatedGroupsRouteWithChildren
   '/notes': typeof AuthenticatedNotesRoute
+  '/reader': typeof AuthenticatedReaderRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/groups': typeof AuthenticatedGroupsRouteWithChildren
   '/notes': typeof AuthenticatedNotesRoute
+  '/reader': typeof AuthenticatedReaderRoute
   '/': typeof AuthenticatedIndexRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
 }
@@ -67,20 +75,28 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/groups': typeof AuthenticatedGroupsRouteWithChildren
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
+  '/_authenticated/reader': typeof AuthenticatedReaderRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/groups' | '/notes' | '/groups/$groupId'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/groups'
+    | '/notes'
+    | '/reader'
+    | '/groups/$groupId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/groups' | '/notes' | '/' | '/groups/$groupId'
+  to: '/auth' | '/groups' | '/notes' | '/reader' | '/' | '/groups/$groupId'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/groups'
     | '/_authenticated/notes'
+    | '/_authenticated/reader'
     | '/_authenticated/'
     | '/_authenticated/groups/$groupId'
   fileRoutesById: FileRoutesById
@@ -111,6 +127,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reader': {
+      id: '/_authenticated/reader'
+      path: '/reader'
+      fullPath: '/reader'
+      preLoaderRoute: typeof AuthenticatedReaderRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notes': {
@@ -151,12 +174,14 @@ const AuthenticatedGroupsRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedGroupsRoute: typeof AuthenticatedGroupsRouteWithChildren
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
+  AuthenticatedReaderRoute: typeof AuthenticatedReaderRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGroupsRoute: AuthenticatedGroupsRouteWithChildren,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
+  AuthenticatedReaderRoute: AuthenticatedReaderRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
