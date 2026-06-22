@@ -14,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VoiceRoom } from "@/components/voice-room";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/groups/$groupId")({
@@ -198,6 +199,12 @@ function GroupDetailPage() {
                     {!isMember && <Button onClick={join}>Join group</Button>}
                   </div>
                 </div>
+
+                {isMember && (
+                  <div className="mb-6">
+                    <VoiceRoom groupId={groupId} groupName={group.name} />
+                  </div>
+                )}
 
                 <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
                   {/* Reading Plan */}
