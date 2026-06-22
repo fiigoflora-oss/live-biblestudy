@@ -1,8 +1,9 @@
 export const translations = [
-  { id: "KJV", name: "King James Version" },
-  { id: "ESV", name: "English Standard Version" },
-  { id: "NIV", name: "New International Version" },
-  { id: "NASB", name: "New American Standard Bible" },
+  { id: "KJV", name: "King James Version", lang: "en" },
+  { id: "ESV", name: "English Standard Version", lang: "en" },
+  { id: "NIV", name: "New International Version", lang: "en" },
+  { id: "NASB", name: "New American Standard Bible", lang: "en" },
+  { id: "AMH", name: "Amharic Haile Selassie 1962", lang: "am" },
 ];
 
 export const books = [
@@ -31,7 +32,8 @@ export const books = [
   { name: "Revelation", chapters: 22 },
 ];
 
-// Sample passages for demonstration
+// Sample passages for demonstration, keyed by `${translation}:${book}-${chapter}`
+// or `${book}-${chapter}` as a default English fallback.
 const samplePassages: Record<string, string[]> = {
   "John-1": [
     "In the beginning was the Word, and the Word was with God, and the Word was God.",
@@ -64,13 +66,42 @@ const samplePassages: Record<string, string[]> = {
     "And God saw the light, that it was good: and God divided the light from the darkness.",
     "And God called the light Day, and the darkness he called Night. And the evening and the morning were the first day.",
   ],
+
+  // Amharic — Haile Selassie 1962 version, Mark 1 (placeholder verses)
+  "AMH:Mark-1": [
+    "የእግዚአብሔር ልጅ የኢየሱስ ክርስቶስ ወንጌል መጀመሪያ።",
+    "በነቢዩ በኢሳይያስ፦ እነሆ፥ መንገድህን የሚጠርግ መልክተኛዬን በፊትህ እልካለሁ ተብሎ እንደ ተጻፈ፥",
+    "በምድረ በዳ የሚጮኽ ድምፅ፦ የጌታን መንገድ አዘጋጁ፥ ጥርጊያውንም አቅኑ የሚል ነበረ።",
+    "ዮሐንስ በምድረ በዳ እያጠመቀ ለኃጢአትም ስርየት የንስሐን ጥምቀት እየሰበከ መጣ።",
+    "የይሁዳም አገር ሁሉ የኢየሩሳሌምም ሰዎች ሁሉ ወደ እርሱ ይወጡ ነበር፥ ኃጢአታቸውንም እየተናዘዙ በዮርዳኖስ ወንዝ ከእርሱ ይጠመቁ ነበር።",
+    "ዮሐንስም የግመል ጠጉር ለብሶ በወገቡም የቁርበት መታጠቂያ ታጥቆ አንበጣና የበረሀ ማርም ይበላ ነበር።",
+    "እርሱም፦ ከእኔ የሚበረታ ይመጣል፥ የጫማውን ቀለበት ጎንበስ ብዬ ልፈታ የማይገባኝ።",
+    "እኔ በውኃ አጠመቅኋችሁ፥ እርሱ ግን በመንፈስ ቅዱስ ያጠምቃችኋል ብሎ ሰበከ።",
+    "በዚያም ወራት ኢየሱስ ከገሊላ ናዝሬት መጣ፥ በዮርዳኖስም ከዮሐንስ ተጠመቀ።",
+    "ወዲያውም ከውኃው ሲወጣ ሰማያት ተከፍተው መንፈስ እንደ ርግብ ሲወርድበት አየ።",
+    "ድምፅም ከሰማይ መጣ፦ የምወድህ ልጄ አንተ ነህ፥ በአንተ ደስ ይለኛል አለ።",
+    "ወዲያውም መንፈስ ወደ ምድረ በዳ አወጣው።",
+  ],
 };
 
-export function getChapter(book: string, chapter: number): string[] {
+export function getChapter(book: string, chapter: number, translation = "KJV"): string[] {
   const key = `${book}-${chapter}`;
+  const localized = samplePassages[`${translation}:${key}`];
+  if (localized) return localized;
+
+  const meta = translations.find((t) => t.id === translation);
+  if (meta?.lang === "am") {
+    return Array.from({ length: 10 }, (_, i) =>
+      `ይህ ${book} ምዕራፍ ${chapter} ቁጥር ${i + 1} ላይ የተቀመጠ ምሳሌ ጥቅስ ነው። ሙሉው የአማርኛ መጽሐፍ ቅዱስ ጽሑፍ በቅርቡ ይጫናል።`,
+    );
+  }
+
   if (samplePassages[key]) return samplePassages[key];
-  // Placeholder verses
   return Array.from({ length: 12 }, (_, i) =>
-    `This is a placeholder verse ${i + 1} for ${book} chapter ${chapter}. In a complete app, this text would be loaded from a Bible API or local data source, presenting the inspired words for reflection and study.`
+    `This is a placeholder verse ${i + 1} for ${book} chapter ${chapter}. In a complete app, this text would be loaded from a Bible API or local data source, presenting the inspired words for reflection and study.`,
   );
+}
+
+export function getTranslationLang(id: string): string {
+  return translations.find((t) => t.id === id)?.lang ?? "en";
 }
