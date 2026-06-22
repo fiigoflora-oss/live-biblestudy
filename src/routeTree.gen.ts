@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedReaderRouteImport } from './routes/_authenticated/reader'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
 import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated/groups'
 import { Route as AuthenticatedGroupsGroupIdRouteImport } from './routes/_authenticated/groups/$groupId'
@@ -34,6 +35,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedReaderRoute = AuthenticatedReaderRouteImport.update({
   id: '/reader',
   path: '/reader',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/groups': typeof AuthenticatedGroupsRouteWithChildren
   '/notes': typeof AuthenticatedNotesRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/reader': typeof AuthenticatedReaderRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
 }
@@ -65,6 +72,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/groups': typeof AuthenticatedGroupsRouteWithChildren
   '/notes': typeof AuthenticatedNotesRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/reader': typeof AuthenticatedReaderRoute
   '/': typeof AuthenticatedIndexRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/groups': typeof AuthenticatedGroupsRouteWithChildren
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reader': typeof AuthenticatedReaderRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
@@ -86,16 +95,25 @@ export interface FileRouteTypes {
     | '/auth'
     | '/groups'
     | '/notes'
+    | '/profile'
     | '/reader'
     | '/groups/$groupId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/groups' | '/notes' | '/reader' | '/' | '/groups/$groupId'
+  to:
+    | '/auth'
+    | '/groups'
+    | '/notes'
+    | '/profile'
+    | '/reader'
+    | '/'
+    | '/groups/$groupId'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/groups'
     | '/_authenticated/notes'
+    | '/_authenticated/profile'
     | '/_authenticated/reader'
     | '/_authenticated/'
     | '/_authenticated/groups/$groupId'
@@ -136,6 +154,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReaderRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/notes': {
       id: '/_authenticated/notes'
       path: '/notes'
@@ -174,6 +199,7 @@ const AuthenticatedGroupsRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedGroupsRoute: typeof AuthenticatedGroupsRouteWithChildren
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReaderRoute: typeof AuthenticatedReaderRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -181,6 +207,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGroupsRoute: AuthenticatedGroupsRouteWithChildren,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReaderRoute: AuthenticatedReaderRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
