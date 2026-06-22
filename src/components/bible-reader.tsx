@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { books, translations, getChapter } from "@/lib/bible-data";
+import { books, translations, getChapter, getTranslationLang } from "@/lib/bible-data";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -17,7 +18,9 @@ export function BibleReader() {
   const [translation, setTranslation] = useState("KJV");
 
   const bookMeta = useMemo(() => books.find((b) => b.name === book)!, [book]);
-  const verses = useMemo(() => getChapter(book, chapter), [book, chapter]);
+  const verses = useMemo(() => getChapter(book, chapter, translation), [book, chapter, translation]);
+  const lang = getTranslationLang(translation);
+  const isEthiopic = lang === "am";
 
   const onBookChange = (val: string) => {
     setBook(val);
@@ -83,7 +86,16 @@ export function BibleReader() {
           </h1>
         </header>
 
-        <div className="font-scripture space-y-2 text-lg leading-relaxed text-foreground sm:text-[1.2rem] sm:leading-[1.9]">
+        <div
+          lang={lang}
+          className={cn(
+            "space-y-2 text-foreground",
+            isEthiopic
+              ? "text-xl leading-[2.05] sm:text-[1.35rem] sm:leading-[2.15]"
+              : "font-scripture text-lg leading-relaxed sm:text-[1.2rem] sm:leading-[1.9]",
+          )}
+          style={isEthiopic ? { fontFamily: '"Noto Serif Ethiopic", "Nyala", Georgia, serif' } : undefined}
+        >
           {verses.map((v, i) => (
             <VerseRow
               key={`${book}-${chapter}-${i}`}
