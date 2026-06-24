@@ -1,73 +1,40 @@
 export const translations = [
-  { id: "KJV", name: "King James Version", lang: "en" },
-  { id: "ESV", name: "English Standard Version", lang: "en" },
-  { id: "NIV", name: "New International Version", lang: "en" },
-  { id: "NASB", name: "New American Standard Bible", lang: "en" },
-  { id: "AMH", name: "Amharic Haile Selassie 1962", lang: "am" },
+  { id: "KJV", name: "King James Version", lang: "en", bollsCode: "KJV" },
+  { id: "ESV", name: "English Standard Version", lang: "en", bollsCode: "ESV" },
+  { id: "NIV", name: "New International Version", lang: "en", bollsCode: "NIV2011" },
+  { id: "NASB", name: "New American Standard Bible", lang: "en", bollsCode: "NASB" },
+  { id: "AMH", name: "Amharic Haile Selassie 1962", lang: "am", bollsCode: null as string | null },
 ];
 
+// `id` is the bolls.life book id (1 = Genesis ... 66 = Revelation)
 export const books = [
-  { name: "Genesis", chapters: 50 },
-  { name: "Exodus", chapters: 40 },
-  { name: "Leviticus", chapters: 27 },
-  { name: "Numbers", chapters: 36 },
-  { name: "Deuteronomy", chapters: 34 },
-  { name: "Joshua", chapters: 24 },
-  { name: "Psalms", chapters: 150 },
-  { name: "Proverbs", chapters: 31 },
-  { name: "Isaiah", chapters: 66 },
-  { name: "Matthew", chapters: 28 },
-  { name: "Mark", chapters: 16 },
-  { name: "Luke", chapters: 24 },
-  { name: "John", chapters: 21 },
-  { name: "Acts", chapters: 28 },
-  { name: "Romans", chapters: 16 },
-  { name: "1 Corinthians", chapters: 16 },
-  { name: "Galatians", chapters: 6 },
-  { name: "Ephesians", chapters: 6 },
-  { name: "Philippians", chapters: 4 },
-  { name: "Hebrews", chapters: 13 },
-  { name: "James", chapters: 5 },
-  { name: "1 John", chapters: 5 },
-  { name: "Revelation", chapters: 22 },
+  { name: "Genesis", chapters: 50, id: 1 },
+  { name: "Exodus", chapters: 40, id: 2 },
+  { name: "Leviticus", chapters: 27, id: 3 },
+  { name: "Numbers", chapters: 36, id: 4 },
+  { name: "Deuteronomy", chapters: 34, id: 5 },
+  { name: "Joshua", chapters: 24, id: 6 },
+  { name: "Psalms", chapters: 150, id: 19 },
+  { name: "Proverbs", chapters: 31, id: 20 },
+  { name: "Isaiah", chapters: 66, id: 23 },
+  { name: "Matthew", chapters: 28, id: 40 },
+  { name: "Mark", chapters: 16, id: 41 },
+  { name: "Luke", chapters: 24, id: 42 },
+  { name: "John", chapters: 21, id: 43 },
+  { name: "Acts", chapters: 28, id: 44 },
+  { name: "Romans", chapters: 16, id: 45 },
+  { name: "1 Corinthians", chapters: 16, id: 46 },
+  { name: "Galatians", chapters: 6, id: 48 },
+  { name: "Ephesians", chapters: 6, id: 49 },
+  { name: "Philippians", chapters: 4, id: 50 },
+  { name: "Hebrews", chapters: 13, id: 58 },
+  { name: "James", chapters: 5, id: 59 },
+  { name: "1 John", chapters: 5, id: 62 },
+  { name: "Revelation", chapters: 22, id: 66 },
 ];
 
-// Sample passages for demonstration, keyed by `${translation}:${book}-${chapter}`
-// or `${book}-${chapter}` as a default English fallback.
+// Local fallback used when a translation has no public API (e.g. Amharic).
 const samplePassages: Record<string, string[]> = {
-  "John-1": [
-    "In the beginning was the Word, and the Word was with God, and the Word was God.",
-    "The same was in the beginning with God.",
-    "All things were made by him; and without him was not any thing made that was made.",
-    "In him was life; and the life was the light of men.",
-    "And the light shineth in darkness; and the darkness comprehended it not.",
-    "There was a man sent from God, whose name was John.",
-    "The same came for a witness, to bear witness of the Light, that all men through him might believe.",
-    "He was not that Light, but was sent to bear witness of that Light.",
-    "That was the true Light, which lighteth every man that cometh into the world.",
-    "He was in the world, and the world was made by him, and the world knew him not.",
-    "He came unto his own, and his own received him not.",
-    "But as many as received him, to them gave he power to become the sons of God, even to them that believe on his name.",
-    "Which were born, not of blood, nor of the will of the flesh, nor of the will of man, but of God.",
-    "And the Word was made flesh, and dwelt among us, (and we beheld his glory, the glory as of the only begotten of the Father,) full of grace and truth.",
-  ],
-  "Psalms-23": [
-    "The Lord is my shepherd; I shall not want.",
-    "He maketh me to lie down in green pastures: he leadeth me beside the still waters.",
-    "He restoreth my soul: he leadeth me in the paths of righteousness for his name's sake.",
-    "Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me.",
-    "Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over.",
-    "Surely goodness and mercy shall follow me all the days of my life: and I will dwell in the house of the Lord for ever.",
-  ],
-  "Genesis-1": [
-    "In the beginning God created the heaven and the earth.",
-    "And the earth was without form, and void; and darkness was upon the face of the deep. And the Spirit of God moved upon the face of the waters.",
-    "And God said, Let there be light: and there was light.",
-    "And God saw the light, that it was good: and God divided the light from the darkness.",
-    "And God called the light Day, and the darkness he called Night. And the evening and the morning were the first day.",
-  ],
-
-  // Amharic — Haile Selassie 1962 version, Mark 1 (placeholder verses)
   "AMH:Mark-1": [
     "የእግዚአብሔር ልጅ የኢየሱስ ክርስቶስ ወንጌል መጀመሪያ።",
     "በነቢዩ በኢሳይያስ፦ እነሆ፥ መንገድህን የሚጠርግ መልክተኛዬን በፊትህ እልካለሁ ተብሎ እንደ ተጻፈ፥",
@@ -84,22 +51,65 @@ const samplePassages: Record<string, string[]> = {
   ],
 };
 
-export function getChapter(book: string, chapter: number, translation = "KJV"): string[] {
-  const key = `${book}-${chapter}`;
-  const localized = samplePassages[`${translation}:${key}`];
-  if (localized) return localized;
+function stripMarkup(text: string): string {
+  // bolls.life embeds Strong's numbers as <S>1234</S> and italics as <i>…</i>
+  return text
+    .replace(/<S>\d+<\/S>/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-  const meta = translations.find((t) => t.id === translation);
-  if (meta?.lang === "am") {
+const cache = new Map<string, string[]>();
+
+export async function fetchChapter(
+  book: string,
+  chapter: number,
+  translation = "KJV",
+  signal?: AbortSignal,
+): Promise<string[]> {
+  const cacheKey = `${translation}:${book}-${chapter}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  const trMeta = translations.find((t) => t.id === translation);
+  const bookMeta = books.find((b) => b.name === book);
+
+  if (trMeta?.bollsCode && bookMeta) {
+    try {
+      const res = await fetch(
+        `https://bolls.life/get-text/${trMeta.bollsCode}/${bookMeta.id}/${chapter}/`,
+        { signal },
+      );
+      if (res.ok) {
+        const data: Array<{ verse: number; text: string }> = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const verses = data
+            .sort((a, b) => a.verse - b.verse)
+            .map((v) => stripMarkup(v.text));
+          cache.set(cacheKey, verses);
+          return verses;
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") throw err;
+      // fall through to local fallback
+    }
+  }
+
+  // Local fallback (Amharic placeholders, or any failed fetch)
+  const localized = samplePassages[cacheKey];
+  if (localized) {
+    cache.set(cacheKey, localized);
+    return localized;
+  }
+
+  if (trMeta?.lang === "am") {
     return Array.from({ length: 10 }, (_, i) =>
       `ይህ ${book} ምዕራፍ ${chapter} ቁጥር ${i + 1} ላይ የተቀመጠ ምሳሌ ጥቅስ ነው። ሙሉው የአማርኛ መጽሐፍ ቅዱስ ጽሑፍ በቅርቡ ይጫናል።`,
     );
   }
-
-  if (samplePassages[key]) return samplePassages[key];
-  return Array.from({ length: 12 }, (_, i) =>
-    `This is a placeholder verse ${i + 1} for ${book} chapter ${chapter}. In a complete app, this text would be loaded from a Bible API or local data source, presenting the inspired words for reflection and study.`,
-  );
+  return [`Unable to load ${book} ${chapter} (${translation}). Please check your connection and try again.`];
 }
 
 export function getTranslationLang(id: string): string {
