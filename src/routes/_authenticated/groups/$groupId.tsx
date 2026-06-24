@@ -166,6 +166,51 @@ function GroupDetailPage() {
     await supabase.from("group_posts").delete().eq("id", id);
   };
 
+  const endAndSaveDiscussion = async () => {
+    if (!userId || dayPosts.length === 0) return;
+    setEndingSession(true);
+    try {
+      const planItem = plan.find((pi) => pi.day_number === activeDay);
+      const title = planItem ? `${planItem.book} ${planItem.chapter} — Day ${activeDay}` : `Day ${activeDay} Discussion`;
+      const snapshot = dayPosts.map((p) => ({
+        id: p.id,
+        user_id: p.user_id,
+        author_name: p.author_name,
+        body: p.body,
+        created_at: p.created_at,
+      }));
+
+      const { data: inserted, error } = await supabase
+        .from("discussion_sessions")
+        .insert({
+          group_id: groupId,
+          reading_day: activeDay,
+          title,
+          messages: snapshot,
+          ended_by: userId,
+          summary_status: "pending",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      toast.success("Discussion saved. Generating summary…");
+      setPastRefreshKey((k) => k + 1);
+
+      try {
+        await summarize({ data: { sessionId: inserted.id } });
+        toast.success("AI summary ready");
+        setPastRefreshKey((k) => k + 1);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Summary failed — you can retry from Past Discussions");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save discussion");
+    } finally {
+      setEndingSession(false);
+    }
+  };
+
   const dayPosts = posts.filter((p) => p.reading_day === activeDay);
 
   return (
