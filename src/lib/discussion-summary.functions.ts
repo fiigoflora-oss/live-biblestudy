@@ -86,7 +86,7 @@ Return ONLY valid JSON. No prose, no markdown fencing.`;
 
     const { error: upErr } = await supabase
       .from("discussion_sessions")
-      .update({ summary: summary as unknown as Record<string, unknown>, summary_status: "ready" })
+      .update({ summary: JSON.parse(JSON.stringify(summary)), summary_status: "ready" })
       .eq("id", session.id);
     if (upErr) throw upErr;
 
