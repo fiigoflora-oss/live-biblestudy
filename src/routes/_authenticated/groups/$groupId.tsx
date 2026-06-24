@@ -254,12 +254,6 @@ function GroupDetailPage() {
                   </div>
                 </div>
 
-                {isMember && (
-                  <div className="mb-6">
-                    <VoiceRoom groupId={groupId} groupName={group.name} />
-                  </div>
-                )}
-
                 <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
                   {/* Reading Plan */}
                   <aside className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -308,13 +302,18 @@ function GroupDetailPage() {
                     </ol>
                   </aside>
 
-                  {/* Discussion + Past */}
+                  {/* Discussion + Past + Voice */}
                   <section className="flex min-h-[500px] flex-col">
                     <Tabs defaultValue="active" className="flex flex-1 flex-col">
                       <TabsList className="mb-3 bg-muted/60">
                         <TabsTrigger value="active" className="font-scripture data-[state=active]:bg-card">
                           Active Discussion
                         </TabsTrigger>
+
+                        <TabsTrigger value="voice" className="font-scripture data-[state=active]:bg-card">
+                          Voice Room
+                        </TabsTrigger>
+
                         <TabsTrigger value="past" className="font-scripture data-[state=active]:bg-card">
                           <Archive className="mr-1.5 h-3.5 w-3.5" /> Past Discussions
                         </TabsTrigger>
@@ -423,8 +422,26 @@ function GroupDetailPage() {
                         </div>
                       </TabsContent>
 
-                      <TabsContent value="past" className="m-0">
-                        <PastDiscussions key={pastRefreshKey} groupId={groupId} />
+                      <TabsContent
+                        value="voice"
+                        className="m-0 flex flex-1 flex-col rounded-xl border border-border bg-card shadow-sm overflow-y-auto"
+                      >
+                        <div className="px-5 py-5">
+                          {isMember ? (
+                            <VoiceRoom groupId={groupId} groupName={group!.name} />
+                          ) : (
+                            <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/60 px-4 py-3">
+                              <p className="text-sm text-muted-foreground">Join this group to access the Voice Room.</p>
+                              <Button size="sm" onClick={join}>Join</Button>
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="past" className="m-0 flex flex-1 flex-col rounded-xl border border-border bg-card shadow-sm overflow-y-auto">
+                        <div className="flex-1 px-5 py-5">
+                          <PastDiscussions key={pastRefreshKey} groupId={groupId} />
+                        </div>
                       </TabsContent>
                     </Tabs>
                   </section>
