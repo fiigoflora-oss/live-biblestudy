@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Loader2 } from "lucide-react";
+import { BookOpen, Loader2, Chrome } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -35,6 +35,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOAuthLoading] = useState(false);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -68,6 +69,23 @@ function AuthPage() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setOAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+      if (error) throw error;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong with Google sign-in";
+      toast.error(msg);
+      setOAuthLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
@@ -88,7 +106,33 @@ function AuthPage() {
               <TabsTrigger value="signup">Sign up</TabsTrigger>
             </TabsList>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {/* OAuth Button */}
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-6 w-full"
+              onClick={handleGoogleSignIn}
+              disabled={oauthLoading}
+            >
+              {oauthLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Chrome className="mr-2 h-4 w-4" />
+              )}
+              Sign in with Google
+            </Button>
+
+            {/* Divider */}
+            <div className="relative mt-6 mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
