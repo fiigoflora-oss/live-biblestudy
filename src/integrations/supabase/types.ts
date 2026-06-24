@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      discussion_sessions: {
+        Row: {
+          created_at: string
+          ended_by: string | null
+          group_id: string
+          id: string
+          messages: Json
+          reading_day: number | null
+          summary: Json | null
+          summary_status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ended_by?: string | null
+          group_id: string
+          id?: string
+          messages?: Json
+          reading_day?: number | null
+          summary?: Json | null
+          summary_status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ended_by?: string | null
+          group_id?: string
+          id?: string
+          messages?: Json
+          reading_day?: number | null
+          summary?: Json | null
+          summary_status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussion_sessions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_memberships: {
         Row: {
           display_name: string | null
