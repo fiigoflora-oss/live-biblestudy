@@ -308,90 +308,125 @@ function GroupDetailPage() {
                     </ol>
                   </aside>
 
-                  {/* Discussion */}
-                  <section className="flex min-h-[500px] flex-col rounded-xl border border-border bg-card shadow-sm">
-                    <div className="border-b border-border px-5 py-4">
-                      <h2 className="font-scripture text-lg font-semibold text-foreground">
-                        Day {activeDay} Discussion
-                      </h2>
-                      <p className="text-xs text-muted-foreground">
-                        Share what you noticed in today's reading
-                      </p>
-                    </div>
+                  {/* Discussion + Past */}
+                  <section className="flex min-h-[500px] flex-col">
+                    <Tabs defaultValue="active" className="flex flex-1 flex-col">
+                      <TabsList className="mb-3 bg-muted/60">
+                        <TabsTrigger value="active" className="font-scripture data-[state=active]:bg-card">
+                          Active Discussion
+                        </TabsTrigger>
+                        <TabsTrigger value="past" className="font-scripture data-[state=active]:bg-card">
+                          <Archive className="mr-1.5 h-3.5 w-3.5" /> Past Discussions
+                        </TabsTrigger>
+                      </TabsList>
 
-                    <div
-                      ref={feedRef}
-                      className="flex-1 space-y-4 overflow-y-auto px-5 py-5"
-                      style={{ maxHeight: "55vh" }}
-                    >
-                      {dayPosts.length === 0 ? (
-                        <p className="py-12 text-center text-sm text-muted-foreground">
-                          No posts yet for this day. Be the first to share.
-                        </p>
-                      ) : (
-                        dayPosts.map((p) => {
-                          const mine = p.user_id === userId;
-                          return (
-                            <div key={p.id} className={cn("flex gap-3", mine && "flex-row-reverse")}>
-                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">
-                                {p.author_name[0]?.toUpperCase()}
-                              </div>
-                              <div className={cn("max-w-[80%] flex-col", mine ? "items-end" : "items-start")}>
-                                <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-                                  <span className="font-medium text-foreground">{p.author_name}</span>
-                                  <span>{new Date(p.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                      <TabsContent value="active" className="m-0 flex flex-1 flex-col rounded-xl border border-border bg-card shadow-sm">
+                        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-5 py-4">
+                          <div>
+                            <h2 className="font-scripture text-lg font-semibold text-foreground">
+                              Day {activeDay} Discussion
+                            </h2>
+                            <p className="text-xs text-muted-foreground">
+                              Share what you noticed in today's reading
+                            </p>
+                          </div>
+                          {isMember && dayPosts.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={endAndSaveDiscussion}
+                              disabled={endingSession}
+                              className="gap-1.5"
+                            >
+                              {endingSession ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                              )}
+                              End & Save Recap
+                            </Button>
+                          )}
+                        </div>
+
+                        <div
+                          ref={feedRef}
+                          className="flex-1 space-y-4 overflow-y-auto px-5 py-5"
+                          style={{ maxHeight: "55vh" }}
+                        >
+                          {dayPosts.length === 0 ? (
+                            <p className="py-12 text-center text-sm text-muted-foreground">
+                              No posts yet for this day. Be the first to share.
+                            </p>
+                          ) : (
+                            dayPosts.map((p) => {
+                              const mine = p.user_id === userId;
+                              return (
+                                <div key={p.id} className={cn("flex gap-3", mine && "flex-row-reverse")}>
+                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">
+                                    {p.author_name[0]?.toUpperCase()}
+                                  </div>
+                                  <div className={cn("max-w-[80%] flex-col", mine ? "items-end" : "items-start")}>
+                                    <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                      <span className="font-medium text-foreground">{p.author_name}</span>
+                                      <span>{new Date(p.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                                    </div>
+                                    <div
+                                      className={cn(
+                                        "rounded-2xl px-4 py-2.5 font-scripture text-sm leading-relaxed",
+                                        mine
+                                          ? "bg-primary text-primary-foreground"
+                                          : "bg-muted text-foreground",
+                                      )}
+                                    >
+                                      {p.body}
+                                    </div>
+                                    {mine && (
+                                      <button
+                                        onClick={() => deletePost(p.id)}
+                                        className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
+                                      >
+                                        <Trash2 className="h-3 w-3" /> Delete
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
-                                <div
-                                  className={cn(
-                                    "rounded-2xl px-4 py-2.5 font-scripture text-sm leading-relaxed",
-                                    mine
-                                      ? "bg-primary text-primary-foreground"
-                                      : "bg-muted text-foreground",
-                                  )}
-                                >
-                                  {p.body}
-                                </div>
-                                {mine && (
-                                  <button
-                                    onClick={() => deletePost(p.id)}
-                                    className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
-                                  >
-                                    <Trash2 className="h-3 w-3" /> Delete
-                                  </button>
-                                )}
-                              </div>
+                              );
+                            })
+                          )}
+                        </div>
+
+                        <div className="border-t border-border p-4">
+                          {isMember ? (
+                            <div className="flex items-end gap-2">
+                              <Textarea
+                                value={draft}
+                                onChange={(e) => setDraft(e.target.value)}
+                                placeholder={`Share a thought on Day ${activeDay}…`}
+                                className="font-scripture min-h-[60px] resize-none"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                                    e.preventDefault();
+                                    send();
+                                  }
+                                }}
+                              />
+                              <Button onClick={send} disabled={sending || !draft.trim()} size="icon" className="h-10 w-10 shrink-0">
+                                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                              </Button>
                             </div>
-                          );
-                        })
-                      )}
-                    </div>
+                          ) : (
+                            <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/60 px-4 py-3">
+                              <p className="text-sm text-muted-foreground">Join this group to post in the discussion.</p>
+                              <Button size="sm" onClick={join}>Join</Button>
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
 
-                    <div className="border-t border-border p-4">
-                      {isMember ? (
-                        <div className="flex items-end gap-2">
-                          <Textarea
-                            value={draft}
-                            onChange={(e) => setDraft(e.target.value)}
-                            placeholder={`Share a thought on Day ${activeDay}…`}
-                            className="font-scripture min-h-[60px] resize-none"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                                e.preventDefault();
-                                send();
-                              }
-                            }}
-                          />
-                          <Button onClick={send} disabled={sending || !draft.trim()} size="icon" className="h-10 w-10 shrink-0">
-                            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/60 px-4 py-3">
-                          <p className="text-sm text-muted-foreground">Join this group to post in the discussion.</p>
-                          <Button size="sm" onClick={join}>Join</Button>
-                        </div>
-                      )}
-                    </div>
+                      <TabsContent value="past" className="m-0">
+                        <PastDiscussions key={pastRefreshKey} groupId={groupId} />
+                      </TabsContent>
+                    </Tabs>
                   </section>
                 </div>
               </div>
