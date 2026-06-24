@@ -72,6 +72,9 @@ function GroupDetailPage() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const feedRef = useRef<HTMLDivElement>(null);
+  const [endingSession, setEndingSession] = useState(false);
+  const [pastRefreshKey, setPastRefreshKey] = useState(0);
+  const summarize = useServerFn(generateDiscussionSummary);
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
