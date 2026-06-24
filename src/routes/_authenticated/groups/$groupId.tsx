@@ -12,10 +12,16 @@ import {
   Send,
   Users,
   Trash2,
+  Archive,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceRoom } from "@/components/voice-room";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PastDiscussions } from "@/components/past-discussions";
+import { useServerFn } from "@tanstack/react-start";
+import { generateDiscussionSummary } from "@/lib/discussion-summary.functions";
 
 export const Route = createFileRoute("/_authenticated/groups/$groupId")({
   head: () => ({
