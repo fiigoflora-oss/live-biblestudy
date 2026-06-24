@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { books, translations, getChapter, getTranslationLang } from "@/lib/bible-data";
+import { useEffect, useMemo, useState } from "react";
+import { books, translations, fetchChapter, getTranslationLang } from "@/lib/bible-data";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -9,18 +9,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { VerseRow } from "@/components/verse-row";
 
 export function BibleReader() {
   const [book, setBook] = useState("John");
   const [chapter, setChapter] = useState(1);
   const [translation, setTranslation] = useState("KJV");
+  const [verses, setVerses] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const bookMeta = useMemo(() => books.find((b) => b.name === book)!, [book]);
-  const verses = useMemo(() => getChapter(book, chapter, translation), [book, chapter, translation]);
   const lang = getTranslationLang(translation);
   const isEthiopic = lang === "am";
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    fetchChapter(book, chapter, translation, controller.signal)
+      .then((v) => setVerses(v))
+      .catch((err: Error) => {
+        if (err?.name !== "AbortError") setVerses(["Failed to load passage."]);
+      })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, [book, chapter, translation]);
 
   const onBookChange = (val: string) => {
     setBook(val);
@@ -96,15 +109,22 @@ export function BibleReader() {
           )}
           style={isEthiopic ? { fontFamily: '"Noto Serif Ethiopic", "Nyala", Georgia, serif' } : undefined}
         >
-          {verses.map((v, i) => (
-            <VerseRow
-              key={`${book}-${chapter}-${i}`}
-              book={book}
-              chapter={chapter}
-              verse={i + 1}
-              text={v}
-            />
-          ))}
+          {loading ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <span className="font-scripture text-base italic">Loading scripture…</span>
+            </div>
+          ) : (
+            verses.map((v, i) => (
+              <VerseRow
+                key={`${book}-${chapter}-${i}`}
+                book={book}
+                chapter={chapter}
+                verse={i + 1}
+                text={v}
+              />
+            ))
+          )}
         </div>
 
         <footer className="mt-10 flex items-center justify-between border-t border-border pt-6">
