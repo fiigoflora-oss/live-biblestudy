@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -32,13 +32,18 @@ interface Group {
 }
 
 function GroupsPage() {
+  const navigate = useNavigate();
   const [groups, setGroups] = useState<Group[]>([]);
   const [memberIds, setMemberIds] = useState<Set<string>>(new Set());
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const load = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUserId(user?.id ?? null);
+
     const { data: gs } = await supabase
       .from("study_groups")
       .select("*")
@@ -46,7 +51,6 @@ function GroupsPage() {
     const { data: ms } = await supabase
       .from("group_memberships")
       .select("group_id, user_id");
-    const { data: { user } } = await supabase.auth.getUser();
 
     setGroups((gs ?? []) as Group[]);
     const mine = new Set<string>();
@@ -64,20 +68,59 @@ function GroupsPage() {
     load();
   }, []);
 
-  const join = async (groupId: string) => {
+  const handleGroupAction = async (groupId: string) => {
+    // Check if already a member
+    if (memberIds.has(groupId)) {
+      // Navigate to group details page
+      navigate({ to: "/groups/$groupId", params: { groupId } });
+      return;
+    }
+
+    // Otherwise, join the group
     setJoining(groupId);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setJoining(null);
+      toast.error("You must be signed in to join a group");
+      return;
+    }
+
+    // Check one more time if already a member (race condition check)
+    const { data: existingMembership } = await supabase
+      .from("group_memberships")
+      .select("id")
+      .eq("group_id", groupId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (existingMembership) {
+      setJoining(null);
+      // Update local state and navigate
+      setMemberIds((prev) => new Set([...prev, groupId]));
+      navigate({ to: "/groups/$groupId", params: { groupId } });
+      return;
+    }
+
     const { error } = await supabase.from("group_memberships").insert({
       group_id: groupId,
       user_id: user.id,
       display_name: user.email?.split("@")[0] ?? "Member",
     });
+
     setJoining(null);
-    if (error) toast.error(error.message);
-    else {
+    if (error) {
+      if (error.message.includes("unique constraint") || error.message.includes("duplicate")) {
+        // User is already a member, navigate to group
+        setMemberIds((prev) => new Set([...prev, groupId]));
+        navigate({ to: "/groups/$groupId", params: { groupId } });
+      } else {
+        toast.error(error.message);
+      }
+    } else {
       toast.success("Joined group");
-      load();
+      setMemberIds((prev) => new Set([...prev, groupId]));
+      // Navigate to the group after joining
+      navigate({ to: "/groups/$groupId", params: { groupId } });
     }
   };
 
@@ -110,6 +153,7 @@ function GroupsPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   {groups.map((g) => {
                     const joined = memberIds.has(g.id);
+                    const isProcessing = joining === g.id;
                     return (
                       <article
                         key={g.id}
@@ -137,10 +181,19 @@ function GroupsPage() {
                         <div className="mt-5 flex items-center gap-2">
                           {joined ? (
                             <>
-                              <Button asChild size="sm" className="flex-1">
-                                <Link to="/groups/$groupId" params={{ groupId: g.id }}>
-                                  Open <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                                </Link>
+                              <Button
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => handleGroupAction(g.id)}
+                                disabled={isProcessing}
+                              >
+                                {isProcessing ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    Enter Group <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                                  </>
+                                )}
                               </Button>
                               <span className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-accent-foreground">
                                 <Check className="h-3 w-3" /> Joined
@@ -150,13 +203,13 @@ function GroupsPage() {
                             <Button
                               size="sm"
                               className="flex-1"
-                              onClick={() => join(g.id)}
-                              disabled={joining === g.id}
+                              onClick={() => handleGroupAction(g.id)}
+                              disabled={isProcessing}
                             >
-                              {joining === g.id ? (
+                              {isProcessing ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
-                                "Join group"
+                                "Join Group"
                               )}
                             </Button>
                           )}
