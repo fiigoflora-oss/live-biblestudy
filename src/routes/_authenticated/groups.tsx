@@ -4,7 +4,9 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Users, BookOpen, Loader2, ArrowRight, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Users, BookOpen, Loader2, ArrowRight, Check, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/groups")({
@@ -39,6 +41,67 @@ function GroupsPage() {
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newBook, setNewBook] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) {
+      toast.error("Group name is required");
+      return;
+    }
+    setCreating(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setCreating(false);
+      toast.error("You must be signed in");
+      return;
+    }
+
+    const { data: inserted, error } = await supabase
+      .from("study_groups")
+      .insert({
+        name: newName.trim(),
+        description: newDescription.trim(),
+        book: newBook.trim() || null,
+        is_public: true,
+      })
+      .select()
+      .single();
+
+    if (error || !inserted) {
+      setCreating(false);
+      toast.error(error?.message ?? "Failed to create group");
+      return;
+    }
+
+    // Auto-join the creator so they can immediately enter the group
+    const { error: joinErr } = await supabase.from("group_memberships").insert({
+      group_id: inserted.id,
+      user_id: user.id,
+      display_name: user.email?.split("@")[0] ?? "Member",
+    });
+    if (joinErr) {
+      console.warn("Auto-join failed:", joinErr.message);
+    }
+
+    // Optimistically update local state so the new group appears instantly
+    setGroups((prev) => [...prev, inserted as Group]);
+    setMemberIds((prev) => new Set([...prev, inserted.id]));
+    setCounts((prev) => ({ ...prev, [inserted.id]: 1 }));
+
+    setNewName("");
+    setNewBook("");
+    setNewDescription("");
+    setShowCreate(false);
+    setCreating(false);
+    toast.success("Group created");
+    // Re-sync from the server in the background for consistency
+    load();
+  };
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -143,6 +206,49 @@ function GroupsPage() {
 
           <main className="flex-1 px-4 py-8 sm:px-8 sm:py-12">
             <div className="mx-auto w-full max-w-4xl">
+              <div className="mb-6 flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Browse public groups or start your own.
+                </p>
+                <Button size="sm" onClick={() => setShowCreate((v) => !v)}>
+                  <Plus className="mr-1 h-4 w-4" />
+                  {showCreate ? "Cancel" : "New Group"}
+                </Button>
+              </div>
+
+              {showCreate && (
+                <form
+                  onSubmit={handleCreateGroup}
+                  className="mb-8 space-y-3 rounded-xl border border-border bg-card p-5 shadow-sm"
+                >
+                  <Input
+                    placeholder="Group name (e.g. Romans Deep Dive)"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    disabled={creating}
+                    required
+                  />
+                  <Input
+                    placeholder="Book focus (optional, e.g. Romans)"
+                    value={newBook}
+                    onChange={(e) => setNewBook(e.target.value)}
+                    disabled={creating}
+                  />
+                  <Textarea
+                    placeholder="What is this group about?"
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    disabled={creating}
+                    rows={3}
+                  />
+                  <div className="flex justify-end">
+                    <Button type="submit" size="sm" disabled={creating}>
+                      {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Group"}
+                    </Button>
+                  </div>
+                </form>
+              )}
+
               {loading ? (
                 <div className="flex justify-center py-16 text-muted-foreground">
                   <Loader2 className="h-6 w-6 animate-spin" />
