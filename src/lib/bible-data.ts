@@ -1,9 +1,17 @@
-export const translations = [
+type Translation = {
+  id: string;
+  name: string;
+  lang: string;
+  bollsCode: string | null;
+  bssCode?: string | null;
+};
+
+export const translations: Translation[] = [
   { id: "KJV", name: "King James Version", lang: "en", bollsCode: "KJV" },
   { id: "ESV", name: "English Standard Version", lang: "en", bollsCode: "ESV" },
   { id: "NIV", name: "New International Version", lang: "en", bollsCode: "NIV2011" },
   { id: "NASB", name: "New American Standard Bible", lang: "en", bollsCode: "NASB" },
-  { id: "AMH", name: "Amharic Haile Selassie 1962", lang: "am", bollsCode: null as string | null },
+  { id: "AMH", name: "Amharic Haile Selassie 1962", lang: "am", bollsCode: null, bssCode: "am_amh" },
 ];
 
 // `id` is the bolls.life book id (1 = Genesis ... 66 = Revelation)
