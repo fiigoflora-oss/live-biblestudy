@@ -1,9 +1,17 @@
-export const translations = [
+type Translation = {
+  id: string;
+  name: string;
+  lang: string;
+  bollsCode: string | null;
+  bssCode?: string | null;
+};
+
+export const translations: Translation[] = [
   { id: "KJV", name: "King James Version", lang: "en", bollsCode: "KJV" },
   { id: "ESV", name: "English Standard Version", lang: "en", bollsCode: "ESV" },
   { id: "NIV", name: "New International Version", lang: "en", bollsCode: "NIV2011" },
   { id: "NASB", name: "New American Standard Bible", lang: "en", bollsCode: "NASB" },
-  { id: "AMH", name: "Amharic Haile Selassie 1962", lang: "am", bollsCode: null as string | null },
+  { id: "AMH", name: "Amharic Haile Selassie 1962", lang: "am", bollsCode: null, bssCode: "am_amh" },
 ];
 
 // `id` is the bolls.life book id (1 = Genesis ... 66 = Revelation)
@@ -97,7 +105,34 @@ export async function fetchChapter(
     }
   }
 
-  // Local fallback (Amharic placeholders, or any failed fetch)
+  // Amharic (and any other non-bolls translation): try biblesupersearch
+  if (trMeta?.bssCode && bookMeta) {
+    try {
+      const ref = encodeURIComponent(`${book} ${chapter}`);
+      const res = await fetch(
+        `https://api.biblesupersearch.com/api?bible=${trMeta.bssCode}&reference=${ref}`,
+        { signal },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const chapterMap = data?.results?.[0]?.verses?.[trMeta.bssCode]?.[String(chapter)];
+        if (chapterMap && typeof chapterMap === "object") {
+          const entries = Object.entries(chapterMap as Record<string, { verse: number; text: string }>)
+            .map(([, v]) => v)
+            .sort((a, b) => a.verse - b.verse)
+            .map((v) => stripMarkup(v.text).replace(/^¶\s*/, ""));
+          if (entries.length > 0) {
+            cache.set(cacheKey, entries);
+            return entries;
+          }
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") throw err;
+    }
+  }
+
+  // Local fallback (e.g. Amharic OT, where no public API is available)
   const localized = samplePassages[cacheKey];
   if (localized) {
     cache.set(cacheKey, localized);
@@ -105,9 +140,9 @@ export async function fetchChapter(
   }
 
   if (trMeta?.lang === "am") {
-    return Array.from({ length: 10 }, (_, i) =>
-      `ይህ ${book} ምዕራፍ ${chapter} ቁጥር ${i + 1} ላይ የተቀመጠ ምሳሌ ጥቅስ ነው። ሙሉው የአማርኛ መጽሐፍ ቅዱስ ጽሑፍ በቅርቡ ይጫናል።`,
-    );
+    return [
+      `ለ${book} ምዕራፍ ${chapter} የአማርኛ ጽሑፍ በነጻ ኤፒአይ በኩል አሁን አይገኝም። እባክዎ ሌላ ምዕራፍ ይምረጡ ወይም በሌላ ትርጉም ይመልከቱ።`,
+    ];
   }
   return [`Unable to load ${book} ${chapter} (${translation}). Please check your connection and try again.`];
 }
