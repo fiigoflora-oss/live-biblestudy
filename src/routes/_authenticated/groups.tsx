@@ -287,19 +287,14 @@ function GroupsPage() {
                         <div className="mt-5 flex items-center gap-2">
                           {joined ? (
                             <>
-                              <Button
-                                size="sm"
-                                className="flex-1"
-                                onClick={() => handleGroupAction(g.id)}
-                                disabled={isProcessing}
-                              >
-                                {isProcessing ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    Enter Group <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                                  </>
-                                )}
+                              <Button asChild size="sm" className="flex-1">
+                                <Link
+                                  to="/groups/$groupId"
+                                  params={{ groupId: g.id }}
+                                  preload="intent"
+                                >
+                                  Enter Group <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                                </Link>
                               </Button>
                               <span className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-accent-foreground">
                                 <Check className="h-3 w-3" /> Joined
