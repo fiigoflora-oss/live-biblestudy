@@ -251,6 +251,7 @@ export type Database = {
         Row: {
           book: string | null
           created_at: string
+          created_by: string | null
           description: string
           id: string
           is_public: boolean
@@ -259,6 +260,7 @@ export type Database = {
         Insert: {
           book?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string
           id?: string
           is_public?: boolean
@@ -267,6 +269,7 @@ export type Database = {
         Update: {
           book?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string
           id?: string
           is_public?: boolean
