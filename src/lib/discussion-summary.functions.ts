@@ -16,13 +16,16 @@ export const generateDiscussionSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { data: session, error } = await supabase
       .from("discussion_sessions")
-      .select("id, title, reading_day, messages, group_id")
+      .select("id, title, reading_day, messages, group_id, ended_by")
       .eq("id", data.sessionId)
       .maybeSingle();
     if (error || !session) throw new Error("Session not found");
+    if (session.ended_by !== userId) {
+      throw new Error("Forbidden: only the session creator can generate summaries");
+    }
 
     const messages = (session.messages as Array<{ author_name: string; body: string }>) ?? [];
     const transcript = messages.map((m) => `${m.author_name}: ${m.body}`).join("\n") || "(no messages)";
