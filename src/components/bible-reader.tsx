@@ -121,6 +121,10 @@ export function BibleReader() {
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               <span className="font-scripture text-base italic">Loading scripture…</span>
             </div>
+          ) : error ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive">
+              {error}
+            </div>
           ) : (
             verses.map((v, i) => (
               <VerseRow
