@@ -1,0 +1,2 @@
+
+GRANT EXECUTE ON FUNCTION public.is_group_member(uuid, uuid) TO authenticated;

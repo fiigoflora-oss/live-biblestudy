@@ -68,6 +68,7 @@ function GroupsPage() {
         description: newDescription.trim(),
         book: newBook.trim() || null,
         is_public: true,
+        created_by: user.id,
       })
       .select()
       .single();
