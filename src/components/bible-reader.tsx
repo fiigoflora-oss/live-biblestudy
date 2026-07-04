@@ -18,6 +18,7 @@ export function BibleReader() {
   const [translation, setTranslation] = useState("KJV");
   const [verses, setVerses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const bookMeta = useMemo(() => books.find((b) => b.name === book)!, [book]);
   const lang = getTranslationLang(translation);
@@ -26,10 +27,16 @@ export function BibleReader() {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
+    setError(null);
     fetchChapter(book, chapter, translation, controller.signal)
-      .then((v) => setVerses(v))
+      .then((v) => {
+        setVerses(v);
+        setError(null);
+      })
       .catch((err: Error) => {
-        if (err?.name !== "AbortError") setVerses(["Failed to load passage."]);
+        if (err?.name === "AbortError") return;
+        setVerses([]);
+        setError(`Couldn't load ${book} ${chapter} (${translation}). Check your connection or try another translation.`);
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
