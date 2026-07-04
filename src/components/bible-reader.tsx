@@ -18,6 +18,7 @@ export function BibleReader() {
   const [translation, setTranslation] = useState("KJV");
   const [verses, setVerses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const bookMeta = useMemo(() => books.find((b) => b.name === book)!, [book]);
   const lang = getTranslationLang(translation);
@@ -26,10 +27,16 @@ export function BibleReader() {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
+    setError(null);
     fetchChapter(book, chapter, translation, controller.signal)
-      .then((v) => setVerses(v))
+      .then((v) => {
+        setVerses(v);
+        setError(null);
+      })
       .catch((err: Error) => {
-        if (err?.name !== "AbortError") setVerses(["Failed to load passage."]);
+        if (err?.name === "AbortError") return;
+        setVerses([]);
+        setError(`Couldn't load ${book} ${chapter} (${translation}). Check your connection or try another translation.`);
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
@@ -113,6 +120,10 @@ export function BibleReader() {
             <div className="flex items-center justify-center py-16 text-muted-foreground">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               <span className="font-scripture text-base italic">Loading scripture…</span>
+            </div>
+          ) : error ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive">
+              {error}
             </div>
           ) : (
             verses.map((v, i) => (
