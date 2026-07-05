@@ -16,6 +16,7 @@ import { Route as AuthenticatedReaderRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
 import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated/groups'
+import { Route as AuthenticatedGroupsIndexRouteImport } from './routes/_authenticated/groups.index'
 import { Route as AuthenticatedGroupsGroupIdRouteImport } from './routes/_authenticated/groups/$groupId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -52,6 +53,12 @@ const AuthenticatedGroupsRoute = AuthenticatedGroupsRouteImport.update({
   path: '/groups',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGroupsIndexRoute =
+  AuthenticatedGroupsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedGroupsRoute,
+  } as any)
 const AuthenticatedGroupsGroupIdRoute =
   AuthenticatedGroupsGroupIdRouteImport.update({
     id: '/$groupId',
@@ -67,15 +74,16 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/reader': typeof AuthenticatedReaderRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
+  '/groups/': typeof AuthenticatedGroupsIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
-  '/groups': typeof AuthenticatedGroupsRouteWithChildren
   '/notes': typeof AuthenticatedNotesRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reader': typeof AuthenticatedReaderRoute
   '/': typeof AuthenticatedIndexRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
+  '/groups': typeof AuthenticatedGroupsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/_authenticated/reader': typeof AuthenticatedReaderRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
+  '/_authenticated/groups/': typeof AuthenticatedGroupsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,15 +107,16 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reader'
     | '/groups/$groupId'
+    | '/groups/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
-    | '/groups'
     | '/notes'
     | '/profile'
     | '/reader'
     | '/'
     | '/groups/$groupId'
+    | '/groups'
   id:
     | '__root__'
     | '/_authenticated'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reader'
     | '/_authenticated/'
     | '/_authenticated/groups/$groupId'
+    | '/_authenticated/groups/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -175,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGroupsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/groups/': {
+      id: '/_authenticated/groups/'
+      path: '/'
+      fullPath: '/groups/'
+      preLoaderRoute: typeof AuthenticatedGroupsIndexRouteImport
+      parentRoute: typeof AuthenticatedGroupsRoute
+    }
     '/_authenticated/groups/$groupId': {
       id: '/_authenticated/groups/$groupId'
       path: '/$groupId'
@@ -187,10 +205,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedGroupsRouteChildren {
   AuthenticatedGroupsGroupIdRoute: typeof AuthenticatedGroupsGroupIdRoute
+  AuthenticatedGroupsIndexRoute: typeof AuthenticatedGroupsIndexRoute
 }
 
 const AuthenticatedGroupsRouteChildren: AuthenticatedGroupsRouteChildren = {
   AuthenticatedGroupsGroupIdRoute: AuthenticatedGroupsGroupIdRoute,
+  AuthenticatedGroupsIndexRoute: AuthenticatedGroupsIndexRoute,
 }
 
 const AuthenticatedGroupsRouteWithChildren =
@@ -222,3 +242,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
