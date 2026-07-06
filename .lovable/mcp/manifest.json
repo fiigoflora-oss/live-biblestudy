@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "lectio-mcp",
+      "version": "0.1.0",
+      "title": "Lectio Bible Study"
+    },
+    "tools": [
+      {
+        "name": "list_translations",
+        "title": "List Bible translations",
+        "description": "List the Bible translations available in Lectio (id, name, language).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_books",
+        "title": "List Bible books",
+        "description": "List all 66 books of the Bible with their chapter counts.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_chapter",
+        "title": "Get Bible chapter",
+        "description": "Fetch the full text of a Bible chapter from bolls.life for a given book name (e.g. 'John'), chapter number, and translation id (e.g. 'KJV', 'ESV', 'WEB').",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "book": {
+              "type": "string",
+              "description": "Book name, e.g. 'Genesis', 'John', '1 Corinthians'."
+            },
+            "chapter": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991,
+              "description": "Chapter number (1-based)."
+            },
+            "translation": {
+              "default": "WEB",
+              "description": "Translation id from list_translations. Defaults to WEB (public domain).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "book",
+            "chapter"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
