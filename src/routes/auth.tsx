@@ -82,6 +82,7 @@ function AuthPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong with Google sign-in";
       toast.error(msg);
+      // Security: Ensure oauthLoading state is reset on error
       setOAuthLoading(false);
     }
   };
