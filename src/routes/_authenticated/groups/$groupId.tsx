@@ -62,6 +62,7 @@ interface Post {
   body: string;
   reading_day: number | null;
   created_at: string;
+  attachments?: AttachmentMeta[] | null;
 }
 
 function GroupDetailPage() {
@@ -72,9 +73,12 @@ function GroupDetailPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [memberCount, setMemberCount] = useState(0);
   const [isMember, setIsMember] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [role, setRole] = useState<"admin" | "plan_maker" | "member" | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState(1);
   const [draft, setDraft] = useState("");
+  const [attachments, setAttachments] = useState<AttachmentMeta[]>([]);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -82,7 +86,43 @@ function GroupDetailPage() {
   const [pastRefreshKey, setPastRefreshKey] = useState(0);
   const summarize = useServerFn(generateDiscussionSummary);
 
+  const isAdmin = role === "admin";
+  const canManagePlan = role === "admin" || role === "plan_maker";
+
   const load = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUserId(user?.id ?? null);
+
+    const [g, p, m, ps] = await Promise.all([
+      supabase.from("study_groups").select("*").eq("id", groupId).maybeSingle(),
+      supabase
+        .from("reading_plan_items")
+        .select("*")
+        .eq("group_id", groupId)
+        .order("day_number"),
+      supabase.from("group_memberships").select("user_id, role, status").eq("group_id", groupId),
+      supabase
+        .from("group_posts")
+        .select("*")
+        .eq("group_id", groupId)
+        .order("created_at", { ascending: true }),
+    ]);
+
+    if (!g.data) {
+      navigate({ to: "/groups" });
+      return;
+    }
+    setGroup(g.data as Group);
+    setPlan((p.data ?? []) as PlanItem[]);
+    const rows = (m.data ?? []) as Array<{ user_id: string; role: "admin" | "plan_maker" | "member"; status: string }>;
+    setMemberCount(rows.filter((r) => r.status === "approved").length);
+    const mine = user ? rows.find((r) => r.user_id === user.id) : undefined;
+    setIsMember(!!mine && mine.status === "approved");
+    setIsPending(!!mine && mine.status === "pending");
+    setRole(mine && mine.status === "approved" ? mine.role : null);
+    setPosts((ps.data ?? []) as Post[]);
+    setLoading(false);
+  };
     const { data: { user } } = await supabase.auth.getUser();
     setUserId(user?.id ?? null);
 
