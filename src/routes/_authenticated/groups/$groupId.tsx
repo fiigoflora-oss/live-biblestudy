@@ -421,6 +421,7 @@ function GroupDetailPage() {
                                     >
                                       {p.body}
                                     </div>
+                                    <AttachmentList attachments={(p.attachments ?? []) as AttachmentMeta[]} />
                                     {mine && (
                                       <button
                                         onClick={() => deletePost(p.id)}
@@ -438,22 +439,25 @@ function GroupDetailPage() {
 
                         <div className="border-t border-border p-4">
                           {isMember ? (
-                            <div className="flex items-end gap-2">
-                              <Textarea
-                                value={draft}
-                                onChange={(e) => setDraft(e.target.value)}
-                                placeholder={`Share a thought on Day ${activeDay}…`}
-                                className="font-scripture min-h-[60px] resize-none"
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                                    e.preventDefault();
-                                    send();
-                                  }
-                                }}
-                              />
-                              <Button onClick={send} disabled={sending || !draft.trim()} size="icon" className="h-10 w-10 shrink-0">
-                                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                              </Button>
+                            <div className="space-y-2">
+                              <div className="flex items-end gap-2">
+                                <Textarea
+                                  value={draft}
+                                  onChange={(e) => setDraft(e.target.value)}
+                                  placeholder={`Share a thought on Day ${activeDay}…`}
+                                  className="font-scripture min-h-[60px] resize-none"
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                                      e.preventDefault();
+                                      send();
+                                    }
+                                  }}
+                                />
+                                <Button onClick={send} disabled={sending || (!draft.trim() && attachments.length === 0)} size="icon" className="h-10 w-10 shrink-0">
+                                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                </Button>
+                              </div>
+                              <AttachmentPicker groupId={groupId} value={attachments} onChange={setAttachments} disabled={sending} />
                             </div>
                           ) : (
                             <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/60 px-4 py-3">
