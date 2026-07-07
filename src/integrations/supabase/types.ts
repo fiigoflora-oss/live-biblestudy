@@ -67,6 +67,8 @@ export type Database = {
           group_id: string
           id: string
           joined_at: string
+          role: Database["public"]["Enums"]["group_role"]
+          status: string
           user_id: string
         }
         Insert: {
@@ -74,6 +76,8 @@ export type Database = {
           group_id: string
           id?: string
           joined_at?: string
+          role?: Database["public"]["Enums"]["group_role"]
+          status?: string
           user_id: string
         }
         Update: {
@@ -81,6 +85,8 @@ export type Database = {
           group_id?: string
           id?: string
           joined_at?: string
+          role?: Database["public"]["Enums"]["group_role"]
+          status?: string
           user_id?: string
         }
         Relationships: [
@@ -95,6 +101,7 @@ export type Database = {
       }
       group_posts: {
         Row: {
+          attachments: Json
           author_name: string
           body: string
           created_at: string
@@ -104,6 +111,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachments?: Json
           author_name: string
           body: string
           created_at?: string
@@ -113,6 +121,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachments?: Json
           author_name?: string
           body?: string
           created_at?: string
@@ -205,6 +214,73 @@ export type Database = {
           verse_text?: string
         }
         Relationships: []
+      }
+      prayer_requests: {
+        Row: {
+          author_name: string
+          body: string
+          created_at: string
+          group_id: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          author_name: string
+          body: string
+          created_at?: string
+          group_id: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          author_name?: string
+          body?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prayer_requests_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prayer_supports: {
+        Row: {
+          created_at: string
+          id: string
+          prayer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prayer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prayer_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prayer_supports_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -315,6 +391,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      group_role: "admin" | "plan_maker" | "member"
       highlight_color: "yellow" | "green" | "blue"
     }
     CompositeTypes: {
@@ -443,6 +520,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      group_role: ["admin", "plan_maker", "member"],
       highlight_color: ["yellow", "green", "blue"],
     },
   },

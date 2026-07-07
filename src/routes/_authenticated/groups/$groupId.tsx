@@ -14,6 +14,8 @@ import {
   Trash2,
   Archive,
   Sparkles,
+  HandHeart,
+  UsersRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceRoom } from "@/components/voice-room";
@@ -22,6 +24,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PastDiscussions } from "@/components/past-discussions";
 import { useServerFn } from "@tanstack/react-start";
 import { generateDiscussionSummary } from "@/lib/discussion-summary.functions";
+import { PrayerRequests } from "@/components/prayer-requests";
+import { MembersPanel } from "@/components/members-panel";
+import { PlanEditor } from "@/components/plan-editor";
+import { AttachmentPicker, AttachmentList, type AttachmentMeta } from "@/components/attachment-picker";
 
 export const Route = createFileRoute("/_authenticated/groups/$groupId")({
   head: () => ({
@@ -56,6 +62,7 @@ interface Post {
   body: string;
   reading_day: number | null;
   created_at: string;
+  attachments?: AttachmentMeta[] | null;
 }
 
 function GroupDetailPage() {
@@ -66,15 +73,21 @@ function GroupDetailPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [memberCount, setMemberCount] = useState(0);
   const [isMember, setIsMember] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [role, setRole] = useState<"admin" | "plan_maker" | "member" | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState(1);
   const [draft, setDraft] = useState("");
+  const [attachments, setAttachments] = useState<AttachmentMeta[]>([]);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const feedRef = useRef<HTMLDivElement>(null);
   const [endingSession, setEndingSession] = useState(false);
   const [pastRefreshKey, setPastRefreshKey] = useState(0);
   const summarize = useServerFn(generateDiscussionSummary);
+
+  const isAdmin = role === "admin";
+  const canManagePlan = role === "admin" || role === "plan_maker";
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -87,7 +100,7 @@ function GroupDetailPage() {
         .select("*")
         .eq("group_id", groupId)
         .order("day_number"),
-      supabase.from("group_memberships").select("user_id").eq("group_id", groupId),
+      supabase.from("group_memberships").select("user_id, role, status").eq("group_id", groupId),
       supabase
         .from("group_posts")
         .select("*")
@@ -101,8 +114,12 @@ function GroupDetailPage() {
     }
     setGroup(g.data as Group);
     setPlan((p.data ?? []) as PlanItem[]);
-    setMemberCount((m.data ?? []).length);
-    setIsMember(!!user && (m.data ?? []).some((row) => row.user_id === user.id));
+    const rows = (m.data ?? []) as Array<{ user_id: string; role: "admin" | "plan_maker" | "member"; status: string }>;
+    setMemberCount(rows.filter((r) => r.status === "approved").length);
+    const mine = user ? rows.find((r) => r.user_id === user.id) : undefined;
+    setIsMember(!!mine && mine.status === "approved");
+    setIsPending(!!mine && mine.status === "pending");
+    setRole(mine && mine.status === "approved" ? mine.role : null);
     setPosts((ps.data ?? []) as Post[]);
     setLoading(false);
   };
@@ -138,16 +155,18 @@ function GroupDetailPage() {
       group_id: groupId,
       user_id: userId,
       display_name: user?.email?.split("@")[0] ?? "Member",
+      role: "member",
+      status: "pending",
     });
     if (error) toast.error(error.message);
     else {
-      toast.success("Joined group");
+      toast.success("Join request sent — awaiting admin approval");
       load();
     }
   };
 
   const send = async () => {
-    if (!draft.trim() || !userId) return;
+    if ((!draft.trim() && attachments.length === 0) || !userId) return;
     setSending(true);
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("group_posts").insert({
@@ -156,11 +175,13 @@ function GroupDetailPage() {
       author_name: user?.email?.split("@")[0] ?? "Member",
       body: draft.trim(),
       reading_day: activeDay,
+      attachments: attachments as unknown as never,
     });
     setSending(false);
     if (error) toast.error(error.message);
-    else setDraft("");
+    else { setDraft(""); setAttachments([]); }
   };
+
 
   const deletePost = async (id: string) => {
     await supabase.from("group_posts").delete().eq("id", id);
@@ -250,7 +271,17 @@ function GroupDetailPage() {
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground">
                       <Users className="h-3.5 w-3.5" /> {memberCount} member{memberCount === 1 ? "" : "s"}
                     </span>
-                    {!isMember && <Button onClick={join}>Join group</Button>}
+                    {!isMember && !isPending && <Button onClick={join}>Request to join</Button>}
+                    {isPending && (
+                      <span className="rounded-full bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-700">
+                        Awaiting admin approval
+                      </span>
+                    )}
+                    {role && (
+                      <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium capitalize text-primary">
+                        {role.replace("_", " ")}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -300,6 +331,9 @@ function GroupDetailPage() {
                         );
                       })}
                     </ol>
+                    {canManagePlan && (
+                      <PlanEditor groupId={groupId} plan={plan} onChanged={load} />
+                    )}
                   </aside>
 
                   {/* Discussion + Past + Voice */}
@@ -314,8 +348,16 @@ function GroupDetailPage() {
                           Voice Room
                         </TabsTrigger>
 
+                        <TabsTrigger value="prayer" className="font-scripture data-[state=active]:bg-card">
+                          <HandHeart className="mr-1.5 h-3.5 w-3.5" /> Prayer
+                        </TabsTrigger>
+
+                        <TabsTrigger value="members" className="font-scripture data-[state=active]:bg-card">
+                          <UsersRound className="mr-1.5 h-3.5 w-3.5" /> Members
+                        </TabsTrigger>
+
                         <TabsTrigger value="past" className="font-scripture data-[state=active]:bg-card">
-                          <Archive className="mr-1.5 h-3.5 w-3.5" /> Past Discussions
+                          <Archive className="mr-1.5 h-3.5 w-3.5" /> Past
                         </TabsTrigger>
                       </TabsList>
 
@@ -379,6 +421,7 @@ function GroupDetailPage() {
                                     >
                                       {p.body}
                                     </div>
+                                    <AttachmentList attachments={(p.attachments ?? []) as AttachmentMeta[]} />
                                     {mine && (
                                       <button
                                         onClick={() => deletePost(p.id)}
@@ -396,22 +439,25 @@ function GroupDetailPage() {
 
                         <div className="border-t border-border p-4">
                           {isMember ? (
-                            <div className="flex items-end gap-2">
-                              <Textarea
-                                value={draft}
-                                onChange={(e) => setDraft(e.target.value)}
-                                placeholder={`Share a thought on Day ${activeDay}…`}
-                                className="font-scripture min-h-[60px] resize-none"
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                                    e.preventDefault();
-                                    send();
-                                  }
-                                }}
-                              />
-                              <Button onClick={send} disabled={sending || !draft.trim()} size="icon" className="h-10 w-10 shrink-0">
-                                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                              </Button>
+                            <div className="space-y-2">
+                              <div className="flex items-end gap-2">
+                                <Textarea
+                                  value={draft}
+                                  onChange={(e) => setDraft(e.target.value)}
+                                  placeholder={`Share a thought on Day ${activeDay}…`}
+                                  className="font-scripture min-h-[60px] resize-none"
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                                      e.preventDefault();
+                                      send();
+                                    }
+                                  }}
+                                />
+                                <Button onClick={send} disabled={sending || (!draft.trim() && attachments.length === 0)} size="icon" className="h-10 w-10 shrink-0">
+                                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                </Button>
+                              </div>
+                              <AttachmentPicker groupId={groupId} value={attachments} onChange={setAttachments} disabled={sending} />
                             </div>
                           ) : (
                             <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/60 px-4 py-3">
@@ -436,6 +482,14 @@ function GroupDetailPage() {
                             </div>
                           )}
                         </div>
+                      </TabsContent>
+
+                      <TabsContent value="prayer" className="m-0 flex flex-1 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                        <PrayerRequests groupId={groupId} isMember={isMember} isAdmin={isAdmin} userId={userId} />
+                      </TabsContent>
+
+                      <TabsContent value="members" className="m-0 flex flex-1 flex-col rounded-xl border border-border bg-card shadow-sm overflow-y-auto">
+                        <MembersPanel groupId={groupId} isAdmin={isAdmin} />
                       </TabsContent>
 
                       <TabsContent value="past" className="m-0 flex flex-1 flex-col rounded-xl border border-border bg-card shadow-sm overflow-y-auto">
