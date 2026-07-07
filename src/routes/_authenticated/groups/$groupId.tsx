@@ -331,6 +331,9 @@ function GroupDetailPage() {
                         );
                       })}
                     </ol>
+                    {canManagePlan && (
+                      <PlanEditor groupId={groupId} plan={plan} onChanged={load} />
+                    )}
                   </aside>
 
                   {/* Discussion + Past + Voice */}
