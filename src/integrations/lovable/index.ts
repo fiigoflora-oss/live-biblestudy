@@ -2,6 +2,9 @@
 
 import { createLovableAuth } from "@lovable.dev/cloud-auth-js";
 import { supabase } from "../supabase/client";
+
+// Security: Ensure Lovable auth is initialized client-side only
+// Never expose LOVABLE_API_KEY to the client
 const lovableAuth = createLovableAuth();
 
 type SignInOptions = {
@@ -9,11 +12,30 @@ type SignInOptions = {
   extraParams?: Record<string, string>;
 };
 
+/**
+ * Validates redirect URI to prevent open redirect vulnerabilities
+ */
+function isValidRedirectUri(uri: string): boolean {
+  try {
+    const url = new URL(uri, window.location.origin);
+    // Only allow same-origin redirects
+    return url.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 export const lovable = {
   auth: {
     signInWithOAuth: async (provider: "google" | "apple" | "microsoft" | "lovable", opts?: SignInOptions) => {
+      // Validate redirect_uri to prevent open redirect attacks
+      const redirectUri = opts?.redirect_uri || window.location.origin;
+      if (!isValidRedirectUri(redirectUri)) {
+        return { error: new Error("Invalid redirect URI") };
+      }
+
       const result = await lovableAuth.signInWithOAuth(provider, {
-        redirect_uri: opts?.redirect_uri,
+        redirect_uri: redirectUri,
         extraParams: {
           ...opts?.extraParams,
         },
