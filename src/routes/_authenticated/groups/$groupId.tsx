@@ -484,6 +484,14 @@ function GroupDetailPage() {
                         </div>
                       </TabsContent>
 
+                      <TabsContent value="prayer" className="m-0 flex flex-1 flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                        <PrayerRequests groupId={groupId} isMember={isMember} isAdmin={isAdmin} userId={userId} />
+                      </TabsContent>
+
+                      <TabsContent value="members" className="m-0 flex flex-1 flex-col rounded-xl border border-border bg-card shadow-sm overflow-y-auto">
+                        <MembersPanel groupId={groupId} isAdmin={isAdmin} />
+                      </TabsContent>
+
                       <TabsContent value="past" className="m-0 flex flex-1 flex-col rounded-xl border border-border bg-card shadow-sm overflow-y-auto">
                         <div className="flex-1 px-5 py-5">
                           <PastDiscussions key={pastRefreshKey} groupId={groupId} />
