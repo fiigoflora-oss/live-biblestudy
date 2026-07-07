@@ -123,35 +123,6 @@ function GroupDetailPage() {
     setPosts((ps.data ?? []) as Post[]);
     setLoading(false);
   };
-    const { data: { user } } = await supabase.auth.getUser();
-    setUserId(user?.id ?? null);
-
-    const [g, p, m, ps] = await Promise.all([
-      supabase.from("study_groups").select("*").eq("id", groupId).maybeSingle(),
-      supabase
-        .from("reading_plan_items")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("day_number"),
-      supabase.from("group_memberships").select("user_id").eq("group_id", groupId),
-      supabase
-        .from("group_posts")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("created_at", { ascending: true }),
-    ]);
-
-    if (!g.data) {
-      navigate({ to: "/groups" });
-      return;
-    }
-    setGroup(g.data as Group);
-    setPlan((p.data ?? []) as PlanItem[]);
-    setMemberCount((m.data ?? []).length);
-    setIsMember(!!user && (m.data ?? []).some((row) => row.user_id === user.id));
-    setPosts((ps.data ?? []) as Post[]);
-    setLoading(false);
-  };
 
   useEffect(() => {
     load();
