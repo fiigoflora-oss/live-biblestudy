@@ -14,6 +14,8 @@ import {
   Trash2,
   Archive,
   Sparkles,
+  HandHeart,
+  UsersRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceRoom } from "@/components/voice-room";
@@ -22,6 +24,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PastDiscussions } from "@/components/past-discussions";
 import { useServerFn } from "@tanstack/react-start";
 import { generateDiscussionSummary } from "@/lib/discussion-summary.functions";
+import { PrayerRequests } from "@/components/prayer-requests";
+import { MembersPanel } from "@/components/members-panel";
+import { PlanEditor } from "@/components/plan-editor";
+import { AttachmentPicker, AttachmentList, type AttachmentMeta } from "@/components/attachment-picker";
 
 export const Route = createFileRoute("/_authenticated/groups/$groupId")({
   head: () => ({
