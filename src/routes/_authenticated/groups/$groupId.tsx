@@ -271,7 +271,17 @@ function GroupDetailPage() {
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground">
                       <Users className="h-3.5 w-3.5" /> {memberCount} member{memberCount === 1 ? "" : "s"}
                     </span>
-                    {!isMember && <Button onClick={join}>Join group</Button>}
+                    {!isMember && !isPending && <Button onClick={join}>Request to join</Button>}
+                    {isPending && (
+                      <span className="rounded-full bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-700">
+                        Awaiting admin approval
+                      </span>
+                    )}
+                    {role && (
+                      <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium capitalize text-primary">
+                        {role.replace("_", " ")}
+                      </span>
+                    )}
                   </div>
                 </div>
 
