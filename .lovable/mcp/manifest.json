@@ -3,12 +3,16 @@
   "sdk_version": "0.20.0",
   "path": "/mcp",
   "auth": {
-    "type": "none"
+    "type": "oauth",
+    "issuer": "https://kuhfiekbskjsptulgpgo.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
   },
   "mcp": {
     "server": {
       "name": "lectio-mcp",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "title": "Lectio Bible Study"
     },
     "tools": [
@@ -76,6 +80,59 @@
           "required": [
             "book",
             "chapter"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_group_discussions",
+        "title": "List group discussions",
+        "description": "List study groups the signed-in user belongs to along with their recent community messages (group posts) and any active discussion sessions. Useful for summarizing what a group is studying and what members have said.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "group_id": {
+              "description": "Optional group id to scope the result to a single group.",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "message_limit": {
+              "description": "Max recent posts to return per group. Defaults to 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_reading_plan",
+        "title": "List group reading plan",
+        "description": "Return the ordered reading plan (day, book, chapter, scheduled date) for a study group the signed-in user is a member of. Use this to know what a group is studying on any given day.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "group_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The study group id."
+            }
+          },
+          "required": [
+            "group_id"
           ]
         },
         "outputSchema": null
