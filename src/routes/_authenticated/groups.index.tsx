@@ -164,6 +164,8 @@ function GroupsPage() {
       group_id: groupId,
       user_id: user.id,
       display_name: user.email?.split("@")[0] ?? "Member",
+      role: "member",
+      status: "pending",
     });
 
     setJoining(null);
@@ -175,9 +177,8 @@ function GroupsPage() {
         toast.error(error.message);
       }
     } else {
-      toast.success("Joined group");
-      setMemberIds((prev) => new Set([...prev, groupId]));
-      enterGroup(groupId);
+      toast.success("Join request sent — an admin will approve you soon");
+      load();
     }
   };
 
