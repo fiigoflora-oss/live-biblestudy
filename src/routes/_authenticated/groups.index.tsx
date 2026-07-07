@@ -82,6 +82,8 @@ function GroupsPage() {
       group_id: inserted.id,
       user_id: user.id,
       display_name: user.email?.split("@")[0] ?? "Member",
+      role: "admin",
+      status: "approved",
     });
     if (joinErr) {
       console.warn("Auto-join failed:", joinErr.message);
