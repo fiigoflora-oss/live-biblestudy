@@ -348,8 +348,16 @@ function GroupDetailPage() {
                           Voice Room
                         </TabsTrigger>
 
+                        <TabsTrigger value="prayer" className="font-scripture data-[state=active]:bg-card">
+                          <HandHeart className="mr-1.5 h-3.5 w-3.5" /> Prayer
+                        </TabsTrigger>
+
+                        <TabsTrigger value="members" className="font-scripture data-[state=active]:bg-card">
+                          <UsersRound className="mr-1.5 h-3.5 w-3.5" /> Members
+                        </TabsTrigger>
+
                         <TabsTrigger value="past" className="font-scripture data-[state=active]:bg-card">
-                          <Archive className="mr-1.5 h-3.5 w-3.5" /> Past Discussions
+                          <Archive className="mr-1.5 h-3.5 w-3.5" /> Past
                         </TabsTrigger>
                       </TabsList>
 
