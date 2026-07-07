@@ -155,16 +155,18 @@ function GroupDetailPage() {
       group_id: groupId,
       user_id: userId,
       display_name: user?.email?.split("@")[0] ?? "Member",
+      role: "member",
+      status: "pending",
     });
     if (error) toast.error(error.message);
     else {
-      toast.success("Joined group");
+      toast.success("Join request sent — awaiting admin approval");
       load();
     }
   };
 
   const send = async () => {
-    if (!draft.trim() || !userId) return;
+    if ((!draft.trim() && attachments.length === 0) || !userId) return;
     setSending(true);
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("group_posts").insert({
@@ -173,11 +175,13 @@ function GroupDetailPage() {
       author_name: user?.email?.split("@")[0] ?? "Member",
       body: draft.trim(),
       reading_day: activeDay,
+      attachments: attachments as unknown as never,
     });
     setSending(false);
     if (error) toast.error(error.message);
-    else setDraft("");
+    else { setDraft(""); setAttachments([]); }
   };
+
 
   const deletePost = async (id: string) => {
     await supabase.from("group_posts").delete().eq("id", id);
