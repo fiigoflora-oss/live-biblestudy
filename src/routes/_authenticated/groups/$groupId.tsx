@@ -271,6 +271,11 @@ function GroupDetailPage() {
                     <p className="mt-2 max-w-2xl font-sans text-sm text-muted-foreground">
                       {group.description}
                     </p>
+                    {adminName && (
+                      <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700">
+                        <Crown className="h-3.5 w-3.5" /> Led by {adminName}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground">
