@@ -1,15 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Mic, MicOff, PhoneOff, Radio, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
-interface Participant {
-  id: string;
+interface PresencePayload {
+  user_id: string;
   name: string;
-  speaking: boolean;
   muted: boolean;
-  self?: boolean;
+  joined_at: number;
+}
+
+interface Participant extends PresencePayload {
+  level: number;
+  self: boolean;
 }
 
 interface VoiceRoomProps {
@@ -18,83 +23,147 @@ interface VoiceRoomProps {
 }
 
 /**
- * A serene, mock voice-room experience.
+ * Live voice-room presence built on Supabase Realtime.
  *
- * No external API keys are configured for LiveKit, so this component
- * simulates a live audio room: it uses the local microphone (via
- * getUserMedia + WebAudio) to drive a real audio-level meter for the
- * current user, and animates a few sample participants so the UX —
- * grid of speakers, mute toggle, leave button, wave indicator —
- * matches what a real LiveKit room would feel like.
+ * - Each participant broadcasts { name, muted } via presence.
+ * - Real microphone RMS drives the local level meter.
+ * - Level samples are broadcast to the channel so other clients can
+ *   render live speaker indicators for remote participants.
+ * - Audio transport is intentionally out-of-scope (no SFU/WebRTC),
+ *   so this delivers a real, multi-user "who is here / who is talking"
+ *   experience without requiring third-party media keys.
  */
 export function VoiceRoom({ groupId, groupName }: VoiceRoomProps) {
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [participants, setParticipants] = useState<Participant[]>([]);
   const [selfLevel, setSelfLevel] = useState(0);
+  const [presence, setPresence] = useState<Record<string, PresencePayload>>({});
+  const [remoteLevels, setRemoteLevels] = useState<Record<string, number>>({});
+  const [selfId, setSelfId] = useState<string | null>(null);
+  const [selfName, setSelfName] = useState<string>("You");
 
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
-  const tickRef = useRef<number | null>(null);
+  const lastBroadcastRef = useRef(0);
+  const mutedRef = useRef(false);
+
+  useEffect(() => { mutedRef.current = muted; }, [muted]);
 
   const connect = async () => {
     setConnecting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const selfName = user?.email?.split("@")[0] ?? "You";
+      if (!user) return;
 
-      // Real local mic for the self meter — gracefully degrade if denied.
-      let stream: MediaStream | null = null;
+      // Look up a friendlier display name from profiles → memberships → email.
+      let name = user.email?.split("@")[0] ?? "Member";
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile?.display_name) name = profile.display_name;
+      const { data: membership } = await supabase
+        .from("group_memberships")
+        .select("display_name")
+        .eq("group_id", groupId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (membership?.display_name) name = membership.display_name;
+
+      setSelfId(user.id);
+      setSelfName(name);
+
+      // Try to open the mic — degrade gracefully if denied.
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         streamRef.current = stream;
-        const ctx = new (window.AudioContext ||
-          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+        const AC =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const ctx = new AC();
         audioCtxRef.current = ctx;
-        const source = ctx.createMediaStreamSource(stream);
+        const src = ctx.createMediaStreamSource(stream);
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 512;
-        source.connect(analyser);
+        src.connect(analyser);
         analyserRef.current = analyser;
+      } catch {
+        // listener-only mode
+      }
 
-        const data = new Uint8Array(analyser.frequencyBinCount);
-        const loop = () => {
+      const channel = supabase.channel(`voice:${groupId}`, {
+        config: { presence: { key: user.id } },
+      });
+      channelRef.current = channel;
+
+      channel.on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState<PresencePayload>();
+        const map: Record<string, PresencePayload> = {};
+        Object.entries(state).forEach(([id, metas]) => {
+          const meta = metas[metas.length - 1];
+          if (meta) map[id] = { ...meta, user_id: id };
+        });
+        setPresence(map);
+      });
+
+      channel.on("presence", { event: "leave" }, ({ key }) => {
+        setRemoteLevels((prev) => {
+          const next = { ...prev };
+          delete next[key as string];
+          return next;
+        });
+      });
+
+      channel.on("broadcast", { event: "level" }, ({ payload }) => {
+        const p = payload as { user_id: string; level: number };
+        if (!p?.user_id || p.user_id === user.id) return;
+        setRemoteLevels((prev) => ({ ...prev, [p.user_id]: p.level }));
+      });
+
+      await channel.subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({
+            user_id: user.id,
+            name,
+            muted: false,
+            joined_at: Date.now(),
+          } satisfies PresencePayload);
+        }
+      });
+
+      // Meter + broadcast loop
+      const data = new Uint8Array(analyserRef.current?.frequencyBinCount ?? 0);
+      const loop = () => {
+        const analyser = analyserRef.current;
+        let rms = 0;
+        if (analyser && !mutedRef.current) {
           analyser.getByteTimeDomainData(data);
           let sum = 0;
           for (let i = 0; i < data.length; i++) {
             const v = (data[i] - 128) / 128;
             sum += v * v;
           }
-          const rms = Math.sqrt(sum / data.length);
-          setSelfLevel(muted ? 0 : Math.min(1, rms * 4));
-          rafRef.current = requestAnimationFrame(loop);
-        };
-        loop();
-      } catch {
-        // mic denied — still allow joining as a listener
-      }
+          rms = Math.min(1, Math.sqrt(sum / data.length) * 4);
+        }
+        setSelfLevel(rms);
 
-      // Seed sample participants (mock LiveKit room)
-      setParticipants([
-        { id: "self", name: selfName, speaking: false, muted: false, self: true },
-        { id: "p1", name: "Hannah", speaking: false, muted: false },
-        { id: "p2", name: "Micah", speaking: false, muted: false },
-        { id: "p3", name: "Ruth", speaking: false, muted: true },
-      ]);
-
-      // Animate other participants' speaking state
-      tickRef.current = window.setInterval(() => {
-        setParticipants((prev) =>
-          prev.map((p) =>
-            p.self
-              ? p
-              : { ...p, speaking: !p.muted && Math.random() > 0.55 },
-          ),
-        );
-      }, 900);
+        const now = performance.now();
+        if (now - lastBroadcastRef.current > 200) {
+          lastBroadcastRef.current = now;
+          channelRef.current?.send({
+            type: "broadcast",
+            event: "level",
+            payload: { user_id: user.id, level: rms },
+          });
+        }
+        rafRef.current = requestAnimationFrame(loop);
+      };
+      loop();
 
       setConnected(true);
     } finally {
@@ -104,7 +173,12 @@ export function VoiceRoom({ groupId, groupName }: VoiceRoomProps) {
 
   const disconnect = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    if (tickRef.current) clearInterval(tickRef.current);
+    rafRef.current = null;
+    if (channelRef.current) {
+      channelRef.current.untrack().catch(() => {});
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
     streamRef.current?.getTracks().forEach((t) => t.stop());
     audioCtxRef.current?.close().catch(() => {});
     streamRef.current = null;
@@ -113,24 +187,35 @@ export function VoiceRoom({ groupId, groupName }: VoiceRoomProps) {
     setConnected(false);
     setMuted(false);
     setSelfLevel(0);
-    setParticipants([]);
+    setPresence({});
+    setRemoteLevels({});
   };
 
   useEffect(() => () => disconnect(), []);
 
+  // Toggle mic track + update presence when mute state changes.
   useEffect(() => {
-    if (!streamRef.current) return;
-    streamRef.current.getAudioTracks().forEach((t) => (t.enabled = !muted));
-  }, [muted]);
+    if (!connected) return;
+    streamRef.current?.getAudioTracks().forEach((t) => (t.enabled = !muted));
+    if (channelRef.current && selfId) {
+      channelRef.current.track({
+        user_id: selfId,
+        name: selfName,
+        muted,
+        joined_at: Date.now(),
+      } satisfies PresencePayload);
+    }
+  }, [muted, connected, selfId, selfName]);
 
-  // Reflect self speaking state in the grid
-  useEffect(() => {
-    setParticipants((prev) =>
-      prev.map((p) =>
-        p.self ? { ...p, speaking: selfLevel > 0.08, muted } : p,
-      ),
-    );
-  }, [selfLevel, muted]);
+  const participants: Participant[] = useMemo(() => {
+    const list = Object.values(presence).map((p) => ({
+      ...p,
+      self: p.user_id === selfId,
+      level: p.user_id === selfId ? selfLevel : remoteLevels[p.user_id] ?? 0,
+    }));
+    list.sort((a, b) => (a.self ? -1 : b.self ? 1 : a.joined_at - b.joined_at));
+    return list;
+  }, [presence, remoteLevels, selfLevel, selfId]);
 
   if (!connected) {
     return (
@@ -176,17 +261,19 @@ export function VoiceRoom({ groupId, groupName }: VoiceRoomProps) {
           </h3>
         </div>
         <span className="hidden text-xs text-muted-foreground sm:inline">
-          Room: {groupId.slice(0, 8)}
+          {groupName}
         </span>
       </div>
 
+      {participants.length <= 1 && (
+        <div className="border-b border-border bg-muted/40 px-5 py-2 text-center text-xs text-muted-foreground">
+          You're the only one here. Invite a member to join.
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3 px-5 py-5 sm:grid-cols-4">
         {participants.map((p) => (
-          <ParticipantTile
-            key={p.id}
-            participant={p}
-            level={p.self ? selfLevel : p.speaking ? 0.6 : 0.05}
-          />
+          <ParticipantTile key={p.user_id} participant={p} />
         ))}
       </div>
 
@@ -208,14 +295,8 @@ export function VoiceRoom({ groupId, groupName }: VoiceRoomProps) {
   );
 }
 
-function ParticipantTile({
-  participant,
-  level,
-}: {
-  participant: Participant;
-  level: number;
-}) {
-  const active = participant.speaking && !participant.muted;
+function ParticipantTile({ participant }: { participant: Participant }) {
+  const active = !participant.muted && participant.level > 0.08;
   return (
     <div
       className={cn(
@@ -235,7 +316,7 @@ function ParticipantTile({
               : "bg-accent text-accent-foreground",
           )}
         >
-          {participant.name[0]?.toUpperCase()}
+          {participant.name[0]?.toUpperCase() ?? "?"}
         </div>
       </div>
       <div className="flex max-w-full items-center gap-1.5">
@@ -249,7 +330,7 @@ function ParticipantTile({
           {participant.self && " (you)"}
         </span>
       </div>
-      <WaveBars level={participant.muted ? 0 : level} active={active} />
+      <WaveBars level={participant.muted ? 0 : participant.level} active={active} />
     </div>
   );
 }
