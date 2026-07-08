@@ -102,7 +102,7 @@ function GroupDetailPage() {
         .select("*")
         .eq("group_id", groupId)
         .order("day_number"),
-      supabase.from("group_memberships").select("user_id, role, status").eq("group_id", groupId),
+      supabase.from("group_memberships").select("user_id, role, status, display_name").eq("group_id", groupId),
       supabase
         .from("group_posts")
         .select("*")
