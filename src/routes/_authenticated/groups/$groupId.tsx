@@ -16,6 +16,7 @@ import {
   Sparkles,
   HandHeart,
   UsersRound,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceRoom } from "@/components/voice-room";
