@@ -73,6 +73,7 @@ function GroupDetailPage() {
   const [plan, setPlan] = useState<PlanItem[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [memberCount, setMemberCount] = useState(0);
+  const [adminName, setAdminName] = useState<string | null>(null);
   const [isMember, setIsMember] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [role, setRole] = useState<"admin" | "plan_maker" | "member" | null>(null);
