@@ -20,7 +20,13 @@ interface Props {
   disabled?: boolean;
 }
 
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+
+function humanSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export function AttachmentPicker({ groupId, value, onChange, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
