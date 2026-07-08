@@ -116,8 +116,10 @@ function GroupDetailPage() {
     }
     setGroup(g.data as Group);
     setPlan((p.data ?? []) as PlanItem[]);
-    const rows = (m.data ?? []) as Array<{ user_id: string; role: "admin" | "plan_maker" | "member"; status: string }>;
+    const rows = (m.data ?? []) as Array<{ user_id: string; role: "admin" | "plan_maker" | "member"; status: string; display_name: string | null }>;
     setMemberCount(rows.filter((r) => r.status === "approved").length);
+    const admin = rows.find((r) => r.role === "admin" && r.status === "approved");
+    setAdminName(admin?.display_name ?? null);
     const mine = user ? rows.find((r) => r.user_id === user.id) : undefined;
     setIsMember(!!mine && mine.status === "approved");
     setIsPending(!!mine && mine.status === "pending");
