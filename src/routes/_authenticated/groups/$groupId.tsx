@@ -16,6 +16,7 @@ import {
   Sparkles,
   HandHeart,
   UsersRound,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceRoom } from "@/components/voice-room";
@@ -47,6 +48,7 @@ interface Group {
   name: string;
   description: string;
   book: string | null;
+  created_by: string | null;
 }
 interface PlanItem {
   id: string;
@@ -72,6 +74,7 @@ function GroupDetailPage() {
   const [plan, setPlan] = useState<PlanItem[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [memberCount, setMemberCount] = useState(0);
+  const [adminName, setAdminName] = useState<string | null>(null);
   const [isMember, setIsMember] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [role, setRole] = useState<"admin" | "plan_maker" | "member" | null>(null);
@@ -100,7 +103,7 @@ function GroupDetailPage() {
         .select("*")
         .eq("group_id", groupId)
         .order("day_number"),
-      supabase.from("group_memberships").select("user_id, role, status").eq("group_id", groupId),
+      supabase.from("group_memberships").select("user_id, role, status, display_name").eq("group_id", groupId),
       supabase
         .from("group_posts")
         .select("*")
@@ -114,8 +117,10 @@ function GroupDetailPage() {
     }
     setGroup(g.data as Group);
     setPlan((p.data ?? []) as PlanItem[]);
-    const rows = (m.data ?? []) as Array<{ user_id: string; role: "admin" | "plan_maker" | "member"; status: string }>;
+    const rows = (m.data ?? []) as Array<{ user_id: string; role: "admin" | "plan_maker" | "member"; status: string; display_name: string | null }>;
     setMemberCount(rows.filter((r) => r.status === "approved").length);
+    const admin = rows.find((r) => r.role === "admin" && r.status === "approved");
+    setAdminName(admin?.display_name ?? null);
     const mine = user ? rows.find((r) => r.user_id === user.id) : undefined;
     setIsMember(!!mine && mine.status === "approved");
     setIsPending(!!mine && mine.status === "pending");
@@ -266,6 +271,11 @@ function GroupDetailPage() {
                     <p className="mt-2 max-w-2xl font-sans text-sm text-muted-foreground">
                       {group.description}
                     </p>
+                    {adminName && (
+                      <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700">
+                        <Crown className="h-3.5 w-3.5" /> Led by {adminName}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground">
