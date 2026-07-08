@@ -42,18 +42,24 @@ export function AttachmentPicker({ groupId, value, onChange, disabled }: Props) 
       const uploaded: AttachmentMeta[] = [];
       for (const file of Array.from(files)) {
         if (file.size > MAX_SIZE) {
-          toast.error(`${file.name} is larger than 10MB`);
+          toast.error(`${file.name} (${humanSize(file.size)}) exceeds the 50 MB limit`);
           continue;
         }
         const safeName = file.name.replace(/[^\w.\-]+/g, "_");
         const path = `${groupId}/${user.id}/${Date.now()}-${safeName}`;
+        const uploadToast = toast.loading(`Uploading ${file.name} (${humanSize(file.size)})…`);
         const { error } = await supabase.storage
           .from("group-attachments")
-          .upload(path, file, { contentType: file.type || "application/octet-stream" });
+          .upload(path, file, {
+            contentType: file.type || "application/octet-stream",
+            cacheControl: "3600",
+            upsert: false,
+          });
         if (error) {
-          toast.error(error.message);
+          toast.error(`${file.name}: ${error.message}`, { id: uploadToast });
           continue;
         }
+        toast.success(`${file.name} uploaded`, { id: uploadToast });
         const { data: signed } = await supabase.storage
           .from("group-attachments")
           .createSignedUrl(path, 60 * 60 * 24 * 7);
