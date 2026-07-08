@@ -116,7 +116,6 @@ export function AttachmentPicker({ groupId, value, onChange, disabled }: Props) 
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
-        accept="image/*,application/pdf,.doc,.docx,.txt,.md"
       />
       <Button
         type="button"
