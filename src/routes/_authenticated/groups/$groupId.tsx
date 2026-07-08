@@ -47,6 +47,7 @@ interface Group {
   name: string;
   description: string;
   book: string | null;
+  created_by: string | null;
 }
 interface PlanItem {
   id: string;
