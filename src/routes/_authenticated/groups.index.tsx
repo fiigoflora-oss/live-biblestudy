@@ -78,16 +78,7 @@ function GroupsPage() {
       return;
     }
 
-    const { error: joinErr } = await supabase.from("group_memberships").insert({
-      group_id: inserted.id,
-      user_id: user.id,
-      display_name: user.email?.split("@")[0] ?? "Member",
-      role: "admin",
-      status: "approved",
-    });
-    if (joinErr) {
-      console.warn("Auto-join failed:", joinErr.message);
-    }
+    // Creator is automatically added as an approved admin by a DB trigger.
 
     setGroups((prev) => [...prev, inserted as Group]);
     setMemberIds((prev) => new Set([...prev, inserted.id]));
